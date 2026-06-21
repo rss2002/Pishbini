@@ -721,11 +721,10 @@ function refreshUI(){
   const d = db();
   const logged = !!current;
 
-  // فقط یک بار چک می‌کنیم، بدون تکرار
-  if(logged && !isAuthenticating && !d.users[current]){
+  // فقط وقتی session رو نامعتبر کن که مطمئنیم دیتا کامل لود شده و کاربر واقعاً نیست
+  if(logged && !isAuthenticating && d.users && Object.keys(d.users).length > 0 && !d.users[current]){
     current = null;
     localStorage.removeItem("wc_current");
-    // بعد از logout، دوباره UI رو تنظیم کن
     document.getElementById("auth").classList.remove("hidden");
     document.getElementById("userBar").classList.add("hidden");
     document.getElementById("needLogin").style.display = "block";
@@ -737,13 +736,14 @@ function refreshUI(){
   document.getElementById("userBar").classList.toggle("hidden", !logged);
   document.getElementById("needLogin").style.display = logged ? "none" : "block";
   document.getElementById("tab-admin").classList.toggle("hidden", !isAdmin());
-  
-  if(logged){
+
+  if(logged && d.users[current]){
     const u = d.users[current];
     document.getElementById("userName").textContent = u.name;
     document.getElementById("userScore").textContent = userTotal(u);
   }
 }
+
 
 
 
