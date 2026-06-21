@@ -586,6 +586,8 @@ function doAuth(){
     if(d.users[email]){ msg("authMsg","این ایمیل قبلاً ثبت شده"); return; }
     d.users[email]={ name, email, pass, predictions:{} };
     save(d);
+    d.users[email]={ name, email, pass, predictions:{}, bonus: 0 };
+save(d);
     current=email; localStorage.setItem("wc_current",email);
     msg("authMsg","ثبت‌نام موفق بود ✅",true);
     afterLogin();
@@ -606,6 +608,11 @@ function isAdmin(){ return current===ADMIN_EMAIL; }
 function afterLogin(){ refreshUI(); renderMatches(); checkNotifications(); }
 
 function refreshUI(){
+  const d = db();
+if(current && !d.users[current]){
+  current = null;
+  localStorage.removeItem("wc_current");
+}
   const logged=!!current;
 
   // ◀️ اصلاح: اگر current هست ولی کاربر توی دیتابیس نیست، لاگ‌اوت کن
