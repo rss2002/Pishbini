@@ -549,45 +549,61 @@ let authMode = "login"; // login | register
 if(fbRef) {
   try {
     fbRef.on("value", snap=>{
-      const val = snap.val();
-      if(val){
-        DATA = val;
-        if(!DATA.users)         DATA.users   = {};
-        if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-        if(!DATA.announcements) DATA.announcements = [];
-        // localStorage رو همیشه با آخرین نسخه سرور آپدیت کن
-        try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
-      } else {
-        // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
-        let local = null;
-        try {
-          const cached = localStorage.getItem("wc_data");
-          local = cached ? JSON.parse(cached) : null;
-        } catch(e){ local = null; }
+  const val = snap.val();
+  
+  // ذخیره‌ی کاربر فعلی قبل از sync
+  const previousCurrent = current;
+  const previousUserData = (previousCurrent && DATA.users && DATA.users[previousCurrent]) 
+                           ? DATA.users[previousCurrent] 
+                           : null;
 
-        if(local && local.users && Object.keys(local.users).length > 0){
-          // دیتای محلی داریم → برش گردون به Firebase
-          DATA = local;
-          if(!DATA.users)         DATA.users   = {};
-          if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-          if(!DATA.announcements) DATA.announcements = [];
-          try { fbRef.set(DATA); } catch(e){}
-        } else {
-          // هیچ جا دیتا نیست → از صفر بساز
-          DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
-          try { fbRef.set(DATA); } catch(e){}
-          try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
-        }
-      }
+  if(val){
+    DATA = val;
+    if(!DATA.users)         DATA.users   = {};
+    if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+    if(!DATA.announcements) DATA.announcements = [];
+    
+    // اگه کاربر فعلی از Firebase گم شده، اما قبلاً داشتیمش، برش گردون
+    if(previousCurrent && !DATA.users[previousCurrent] && previousUserData){
+      console.warn("Session user missing from Firebase snapshot, restoring from local copy");
+      DATA.users[previousCurrent] = previousUserData;
+      // دوباره Firebase رو هم آپدیت کن
+      try { fbRef.set(DATA); } catch(e){}
+    }
+    
+    // localStorage رو همیشه با آخرین نسخه سرور آپدیت کن
+    try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+  } else {
+    // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
+    let local = null;
+    try {
+      const cached = localStorage.getItem("wc_data");
+      local = cached ? JSON.parse(cached) : null;
+    } catch(e){ local = null; }
 
-      // دوباره رندر کن تا تغییرات زنده دیده بشن
-      refreshUI();
-      if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
-      if(!document.getElementById("view-leaderboard").classList.contains("hidden")) renderLeaderboard();
-      if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
-      if(!document.getElementById("view-admin").classList.contains("hidden"))        renderAdmin();
-      checkNotifications();
-    });
+    if(local && local.users && Object.keys(local.users).length > 0){
+      // دیتای محلی داریم → برش گردون به Firebase
+      DATA = local;
+      if(!DATA.users)         DATA.users   = {};
+      if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+      if(!DATA.announcements) DATA.announcements = [];
+      try { fbRef.set(DATA); } catch(e){}
+    } else {
+      // هیچ جا دیتا نیست → از صفر بساز
+      DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
+      try { fbRef.set(DATA); } catch(e){}
+      try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+    }
+  }
+
+  // دوباره رندر کن تا تغییرات زنده دیده بشن
+  refreshUI();
+  if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
+  if(!document.getElementById("view-leaderboard").classList.contains("hidden")) renderLeaderboard();
+  if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
+  if(!document.getElementById("view-admin").classList.contains("hidden"))        renderAdmin();
+  checkNotifications();
+});
   } catch(e) {
     console.warn("⚠️ Firebase listener failed:", e);
   }
