@@ -483,7 +483,6 @@ function updateTimers(){
 setInterval(updateTimers, 1000);
 updateTimers();
 
-/* ====================== ذخیره‌سازی ====================== */
 /* ====================== ذخیره‌سازی (Firebase) ====================== */
 const firebaseConfig = {
   apiKey: "AIzaSyC2qVdIHgxLY1ojHnf2rnfBcB1Fv5ikfao",
@@ -605,18 +604,28 @@ function isAdmin(){ return current===ADMIN_EMAIL; }
 
 /* ====================== UI ====================== */
 function afterLogin(){ refreshUI(); renderMatches(); checkNotifications(); }
+
 function refreshUI(){
   const logged=!!current;
-  document.getElementById("auth").classList.toggle("hidden",logged);
-  document.getElementById("userBar").classList.toggle("hidden",!logged);
-  document.getElementById("needLogin").style.display = logged?"none":"block";
+
+  // ◀️ اصلاح: اگر current هست ولی کاربر توی دیتابیس نیست، لاگ‌اوت کن
+  if(logged && !db().users[current]){
+    current = null;
+    localStorage.removeItem("wc_current");
+  }
+
+  const isLogged = !!current;
+  document.getElementById("auth").classList.toggle("hidden", isLogged);
+  document.getElementById("userBar").classList.toggle("hidden", !isLogged);
+  document.getElementById("needLogin").style.display = isLogged ? "none" : "block";
   document.getElementById("tab-admin").classList.toggle("hidden", !isAdmin());
-  if(logged){
-    const u=db().users[current];
-    document.getElementById("userName").textContent=u.name;
-    document.getElementById("userScore").textContent=userTotal(u);
+  if(isLogged){
+    const u = db().users[current];
+    document.getElementById("userName").textContent = u.name;
+    document.getElementById("userScore").textContent = userTotal(u);
   }
 }
+
 function showTab(name){
   ["matches","leaderboard","profile","admin"].forEach(t=>{
     document.getElementById("view-"+t).classList.toggle("hidden", t!==name);
@@ -635,8 +644,14 @@ function renderMatches(){
   box.innerHTML="";
   if(!current) return;
   const u=d.users[current];
+
+  // ◀️ اصلاح: اگر کاربر توی دیتابیس نیست، برنگرد خطا بده
+  if(!u) return;
+
+  const preds = u.predictions || {};
+
   d.matches.forEach((m,idx)=>{
-    const pred=u.predictions[m.id];
+    const pred = preds[m.id] || null;
     const locked=!!pred;
     const finished=!!m.result;
     const open=isPredictionOpen(m);
@@ -675,7 +690,6 @@ function renderMatches(){
 
 
 /* ====================== لیدربرد ====================== */
-/* ====================== لیدربرد ====================== */
 function renderLeaderboard(){
   const d=db();
   const arr=Object.values(d.users)
@@ -710,7 +724,7 @@ function showUserProfile(email){
   const detail=document.getElementById("mDetail");
   detail.innerHTML="";
   d.matches.forEach(m=>{
-    const p=u.predictions[m.id];
+    const p=(u.predictions||{})[m.id];
     if(!p) return;
     count++;
     let pts="—", res="در انتظار";
@@ -728,7 +742,6 @@ function showUserProfile(email){
   document.getElementById("mExact").textContent=exact;
   document.getElementById("mDiff").textContent=diff;
   document.getElementById("mWinner").textContent=winner;
-  document.getElementById("mWrong").textContent=wrong;
   document.getElementById("mWrong").textContent=wrong;
   document.getElementById("mSolo").textContent = u.soloExactWins || 0;
 
@@ -754,13 +767,14 @@ function saveSchedule(id){
   renderAdmin();
 }
 
-/* ====================== پایل ====================== */
+/* ====================== پروفایل ====================== */
 function renderProfile(){
   const logged=!!current;
   document.getElementById("profileNeedLogin").classList.toggle("hidden",logged);
   document.getElementById("profileContent").classList.toggle("hidden",!logged);
   if(!logged) return;
   const d=db(); const u=d.users[current];
+  if(!u) return;
   document.getElementById("pName").textContent=u.name;
   document.getElementById("pEmail").textContent=u.email;
 
@@ -768,7 +782,7 @@ function renderProfile(){
   const detail=document.getElementById("pDetail");
   detail.innerHTML="";
   d.matches.forEach(m=>{
-    const p=u.predictions[m.id];
+    const p=(u.predictions||{})[m.id];
     if(!p) return;
     count++;
     let pts="—", res="در انتظار";
@@ -857,7 +871,7 @@ function renderAdmin(){
 }
 
 
-/* ====================== شروع ====================== */
+/* ====================== عملیات ====================== */
 function submitPred(id){
   const h = document.getElementById("h_"+id).value;
   const a = document.getElementById("a_"+id).value;
@@ -898,7 +912,7 @@ function checkSoloPrize(d, m){
 
   const exactUsers = Object.values(d.users).filter(u=>{
     if(u.email===ADMIN_EMAIL) return false;
-    const p=u.predictions[m.id];
+    const p=(u.predictions||{})[m.id];
     return p && calcPoints(p, m.result)===10;
   });
 
@@ -985,7 +999,7 @@ function deleteMatch(id){
   const d=db();
   d.matches = d.matches.filter(m=>m.id!==id);
   // حذف پیش‌بینی‌های مربوطه
-  Object.values(d.users).forEach(u=>{ delete u.predictions[id]; });
+  Object.values(d.users).forEach(u=>{ delete (u.predictions||{})[id]; });
   save(d);
   renderAdmin();
   renderMatches();
