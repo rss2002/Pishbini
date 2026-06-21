@@ -533,6 +533,33 @@ fbRef.on("value", snap=>{
   checkNotifications();
 });
 
+/* ====================== امتیازدهی ====================== */
+function calcPoints(pred, result){
+  // نتیجه دقیق
+  if(pred.h === result.h && pred.a === result.a) return 10;
+
+  const pd = pred.h - pred.a;        // تفاضل پیش‌بینی
+  const rd = result.h - result.a;    // تفاضل نتیجه واقعی
+  const predW = pd > 0 ? 1 : pd < 0 ? -1 : 0;
+  const resW  = rd > 0 ? 1 : rd < 0 ? -1 : 0;
+
+  if(predW === resW){
+    if(pd === rd) return 8;   // برنده درست + تفاضل گل درست
+    return 5;                 // فقط برنده درست
+  }
+  return 1;                   // اشتباه
+}
+
+function userTotal(u){
+  let total = u.bonus || 0;
+  const d = db();
+  d.matches.forEach(m=>{
+    if(m.result && u.predictions && u.predictions[m.id]){
+      total += calcPoints(u.predictions[m.id], m.result);
+    }
+  });
+  return total;
+}
 
 /* ====================== احراز هویت ====================== */
 function toggleAuthMode(){
