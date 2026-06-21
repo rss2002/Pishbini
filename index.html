@@ -586,8 +586,6 @@ async function doAuth(){
     if(d.users[email]){ msg("authMsg","این ایمیل قبلاً ثبت شده"); return; }
     d.users[email]={ name, email, pass, predictions:{} };
     save(d);
-    d.users[email]={ name, email, pass, predictions:{}, bonus: 0 };
-save(d);
     current=email; localStorage.setItem("wc_current",email);
     msg("authMsg","ثبت‌نام موفق بود ✅",true);
     await afterLogin();
@@ -611,6 +609,7 @@ async function afterLogin(){
   renderMatches(); 
   checkNotifications(); 
 }
+
  
 
 
