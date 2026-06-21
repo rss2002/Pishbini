@@ -593,7 +593,7 @@ async function doAuth(){
     const u=d.users[email];
     if(!u || u.pass!==pass){ msg("authMsg","ایمیل یا رمز اشتباه است"); return; }
     current=email; localStorage.setItem("wc_current",email);
-    afterLogin();
+    await afterLogin();
   }
 }
 function logout(){
