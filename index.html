@@ -606,6 +606,10 @@ function userTotal(u){
   return total;
 }
 
+function isAdmin() {
+  return current === ADMIN_EMAIL;
+}
+
 /* ====================== احراز هویت ====================== */
 function toggleAuthMode(){
   authMode = authMode==="login" ? "register":"login";
