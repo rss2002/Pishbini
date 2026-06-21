@@ -510,6 +510,7 @@ function save(d){
 }
 
 let current = localStorage.getItem("wc_current") || null;
+let isAuthenticating = false;
 let authMode = "login"; // login | register
 
 // گوش دادن به تغییرات آنلاین: هر کسی چیزی عوض کنه، برای همه آپدیت می‌شه
@@ -580,46 +581,63 @@ function msg(id,text,ok){
 }
 async function doAuth(){
   const d = db();
+  isAuthenticating = true; // ← اضافه شد
+  
   if(authMode==="register"){
     const name  = document.getElementById("regName").value.trim();
     const email = document.getElementById("regEmail").value.trim();
     const pass  = document.getElementById("regPass").value.trim();
-    if(!name || !email || !pass) return msg("authMsg","لطفاً تمام فیلدها رو پر کنید");
-    if(d.users[email]) return msg("authMsg","این ایمیل قبلاً ثبت شده");
+    if(!name || !email || !pass) {
+      isAuthenticating = false; // ← اضافه شد
+      return msg("authMsg","لطفاً تمام فیلدها رو پر کنید");
+    }
+    if(d.users[email]) {
+      isAuthenticating = false; // ← اضافه شد
+      return msg("authMsg","این ایمیل قبلاً ثبت شده");
+    }
     
     d.users[email] = { name, email, pass, predictions:{}, seenAnnouncements:[] };
-    save(d);
-    
     current = email;
     localStorage.setItem("wc_current", email);
+    
+    save(d);
+    
     msg("authMsg","ثبت‌نام موفق بود ✅", true);
     
-    // حذف await، چون refreshUI از طریق listener صدا زده میشه
     setTimeout(()=>{
+      isAuthenticating = false; // ← اضافه شد
       refreshUI();
       renderMatches();
       checkNotifications();
-    }, 300);
+    }, 500); // ← تغییر از 300 به 500
   }
   else {
     const email = document.getElementById("loginEmail").value.trim();
     const pass  = document.getElementById("loginPass").value.trim();
-    if(!email || !pass) return msg("authMsg","لطفاً ایمیل و رمز رو وارد کنید");
+    if(!email || !pass) {
+      isAuthenticating = false; // ← اضافه شد
+      return msg("authMsg","لطفاً ایمیل و رمز رو وارد کنید");
+    }
     
     const u = d.users[email];
-    if(!u || u.pass !== pass) return msg("authMsg","ایمیل یا رمز اشتباه است");
+    if(!u || u.pass !== pass) {
+      isAuthenticating = false; // ← اضافه شد
+      return msg("authMsg","ایمیل یا رمز اشتباه است");
+    }
     
     current = email;
     localStorage.setItem("wc_current", email);
     msg("authMsg","ورود موفق ✅", true);
     
     setTimeout(()=>{
+      isAuthenticating = false; // ← اضافه شد
       refreshUI();
       renderMatches();
       checkNotifications();
-    }, 300);
+    }, 500); // ← تغییر از 300 به 500
   }
 }
+
 
 
  
@@ -631,7 +649,7 @@ function refreshUI(){
   const logged = !!current;
 
   // فقط یک بار چک می‌کنیم، بدون تکرار
-  if(logged && !d.users[current]){
+  if(logged && !isAuthenticating && !d.users[current]){
     current = null;
     localStorage.removeItem("wc_current");
     // بعد از logout، دوباره UI رو تنظیم کن
