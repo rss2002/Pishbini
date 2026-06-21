@@ -575,7 +575,7 @@ function msg(id,text,ok){
   const e=document.getElementById(id);
   e.textContent=text; e.className="msg "+(ok?"ok":"err");
 }
-function doAuth(){
+async function doAuth(){
   const email=document.getElementById("authEmail").value.trim().toLowerCase();
   const pass =document.getElementById("authPass").value;
   if(!email || !pass){ msg("authMsg","ایمیل و رمز را وارد کن"); return; }
@@ -590,7 +590,7 @@ function doAuth(){
 save(d);
     current=email; localStorage.setItem("wc_current",email);
     msg("authMsg","ثبت‌نام موفق بود ✅",true);
-    afterLogin();
+    await afterLogin();
   } else {
     const u=d.users[email];
     if(!u || u.pass!==pass){ msg("authMsg","ایمیل یا رمز اشتباه است"); return; }
@@ -605,7 +605,11 @@ function logout(){
 function isAdmin(){ return current===ADMIN_EMAIL; }
 
 /* ====================== UI ====================== */
-function afterLogin(){ refreshUI(); renderMatches(); checkNotifications(); }
+async function afterLogin(){ 
+  await new Promise(r => setTimeout(r, 300)); 
+  refreshUI(); renderMatches(); checkNotifications(); 
+}
+
 
 function refreshUI(){
   const d = db();
