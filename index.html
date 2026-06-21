@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پیش‌بینی جام جهانی ⚽</title>
+<style>
+
+  .field, .score-in { color:#fff; }
+  input[type="time"] { color:#fff; }
+  .match-timer.closed { color:#fff; }
+  .match-timer { color:#fff; }
+.field, .score-in { color:#000; }
+input[type="time"] { color:#000; }
+
+  #lbBody td{color:#fff;}
+
+  #authSwitchText,
+#needLogin {
+  color: #fff;
+
+}
+#userModal #mDetail td,
+#userModal #mDetail th,
+#userModal table th {
+  color: #fff;
+}
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Tahoma,sans-serif;}
+  body{
+  font-family:'Vazirmatn',sans-serif;
+  direction:rtl;
+  margin:0;padding:0;
+  min-height:100vh;
+  background-color:#0a4d2c;
+  background-image:
+    linear-gradient(rgba(10,77,44,.78), rgba(8,40,24,.88)),
+    url("Backgroundimage.jpg");
+  background-size:cover;
+  background-position:center;
+  background-attachment:fixed;
+  background-repeat:no-repeat;
+}
+
+  header{
+    text-align:center;padding:24px 16px;
+    background:rgba(0,0,0,.25);border-bottom:3px solid #ffd700;
+    position:relative;overflow:hidden;
+  }
+  header h1{font-size:30px;color:#ffd700;text-shadow:0 2px 8px rgba(0,0,0,.5);}
+  header p{margin-top:6px;color:#d9ffe6;font-size:14px;}
+  .ball{
+    position:absolute;top:10px;font-size:26px;opacity:.4;
+    animation:roll 8s linear infinite;
+  }
+  @keyframes roll{0%{left:-40px;transform:rotate(0)}100%{left:110%;transform:rotate(720deg)}}
+
+  .tabs{
+    display:flex;justify-content:center;gap:8px;flex-wrap:wrap;
+    padding:14px;background:rgba(0,0,0,.15);position:sticky;top:0;z-index:50;
+  }
+  .tabs button{
+    background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,215,0,.4);
+    padding:10px 18px;border-radius:30px;cursor:pointer;font-size:14px;
+    transition:all .25s;
+  }
+  .tabs button:hover{background:rgba(255,215,0,.2);}
+  .tabs button.active{background:#ffd700;color:#0a4d2c;font-weight:bold;}
+
+  .container{max-width:760px;margin:0 auto;padding:20px 16px 60px;}
+  .hidden{display:none;}
+
+  .card{
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+    border-radius:16px;padding:20px;margin-bottom:16px;backdrop-filter:blur(4px);
+  }
+  input,button{font-size:15px;}
+  .field input{
+    width:100%;padding:11px;border-radius:10px;border:none;margin-top:8px;
+    background:rgba(255,255,255,.9);color:#111;
+  }
+  .field{margin-bottom:12px;}
+  .field label{font-size:13px;color:#d9ffe6;}
+  button{
+    background:#ffd700;color:#0a4d2c;border:none;padding:11px 20px;
+    border-radius:10px;cursor:pointer;font-weight:bold;transition:transform .15s,filter .2s;
+  }
+  button:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .row{display:flex;gap:10px;align-items:center;}
+  .switch-link{color:#ffd700;cursor:pointer;text-decoration:underline;font-size:13px;}
+  .msg{font-size:13px;margin-top:8px;min-height:16px;}
+  .msg.err{color:#ff9b9b;}
+  .msg.ok{color:#9bffb0;}
+
+  /* matches */
+  .match{
+    background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.1);
+    border-radius:14px;padding:16px;margin-bottom:14px;
+    opacity:0;animation:pop .5s forwards;position:relative;overflow:hidden;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .match.locked{border-color:rgba(255,215,0,.5);}
+  .match.locked::after{
+    content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(120deg,transparent,rgba(255,215,0,.18),transparent);
+    animation:shine 3.5s infinite;
+  }
+  @keyframes shine{0%{left:-60%}60%,100%{left:120%}}
+  .meta{font-size:12px;color:#bfe9cf;margin-bottom:10px;}
+  .teams{display:flex;align-items:center;justify-content:center;gap:8px;}
+  .team{display:flex;flex-direction:column;align-items:center;gap:6px;width:90px;text-align:center;}
+  .tname{font-size:13px;color:#fff;}
+
+  .score-in{
+    width:48px;text-align:center;padding:8px 4px;border-radius:8px;border:none;
+    background:rgba(255,255,255,.92);color:#111;font-weight:bold;font-size:16px;
+  }
+  .vs{
+    color:#ffd700;font-weight:bold;font-size:14px;
+    animation:vsPulse 1.8s infinite;
+  }
+  @keyframes vsPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+  .result-tag{
+    margin-top:12px;text-align:center;font-size:13px;color:#d9ffe6;
+    background:rgba(0,0,0,.25);padding:8px;border-radius:8px;
+  }
+  .points-badge{
+    background:#ffd700;color:#0a4d2c;padding:2px 9px;border-radius:20px;
+    font-weight:bold;display:inline-block;animation:pop2 .4s;
+  }
+  @keyframes pop2{from{transform:scale(0)}to{transform:scale(1)}}
+
+  .flag-svg{
+    width:40px;height:27px;border-radius:4px;overflow:hidden;
+    display:inline-block;box-shadow:0 1px 4px rgba(0,0,0,.3);
+    border:1px solid rgba(255,255,255,.25);vertical-align:middle;
+    transition:transform .25s;
+  }
+  .flag-svg:hover{transform:scale(1.15) rotate(-2deg);}
+  .flag-svg svg{width:100%;height:100%;display:block;}
+
+  /* leaderboard */
+  table{width:100%;border-collapse:collapse;}
+  th,td{padding:10px;text-align:center;font-size:14px;}
+  th{color:#ffd700;border-bottom:2px solid rgba(255,215,0,.4);}
+  tr:nth-child(even){background:rgba(255,255,255,.05);}
+  .rank-1{color:#ffd700;font-weight:bold;}
+  .rank-2{color:#c0c0c0;font-weight:bold;}
+  .rank-3{color:#cd7f32;font-weight:bold;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px;}
+  .stat{background:rgba(0,0,0,.25);border-radius:12px;padding:14px;text-align:center;}
+  .stat b{display:block;font-size:24px;color:#ffd700;}
+  .stat span{font-size:12px;color:#bfe9cf;}
+
+  .scoring-info{font-size:12px;color:#bfe9cf;line-height:1.9;}
+  .scoring-info b{color:#ffd700;}
+
+  .modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;
+  z-index:200;padding:16px;animation:fadeIn .25s;
+}
+.modal-overlay.hidden{display:none;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{
+  background:linear-gradient(135deg,#0d6b3f,#0a4d2c);
+  border:2px solid #ffd700;border-radius:18px;
+  max-width:560px;width:100%;max-height:85vh;overflow-y:auto;
+  padding:22px;position:relative;animation:pop .35s;
+}
+.modal-close{
+  position:absolute;top:12px;left:12px;
+  background:#ff6b6b;color:#fff;border:none;
+  width:32px;height:32px;border-radius:50%;cursor:pointer;
+  font-size:16px;font-weight:bold;
+}
+.lb-name{cursor:pointer;color:#fff;text-decoration:underline;
+  text-decoration-color:rgba(255,215,0,.5);transition:color .2s;}
+.lb-name:hover{color:#ffd700;}
+
+</style>
+
+</head>
+<body>
+
+<header>
+  <span class="ball">⚽</span>
+  <span class="ball" style="animation-delay:4s">⚽</span>
+  <h1>⚽ پیش‌بینی جام جهانی</h1>
+  <p>نتیجه بازی‌ها رو حدس بزن، امتیاز بگیر و بالای جدول برو!</p>
+</header>
+
+<div class="tabs">
+  <button id="tab-matches" class="active" onclick="showTab('matches')">بازی‌ها</button>
+  <button id="tab-leaderboard" onclick="showTab('leaderboard')">لیدربرد</button>
+  <button id="tab-profile" onclick="showTab('profile')">پروفایل</button>
+  <button id="tab-admin" class="hidden" onclick="showTab('admin')">پنل ادمین</button>
+</div>
+
+<div class="container">
+
+  <!-- AUTH -->
+  <div id="auth" class="card">
+    <h2 id="authTitle" style="color:#ffd700;margin-bottom:14px;">ورود</h2>
+    <div class="field" id="nameField" style="display:none;">
+      <label>نام نمایشی</label>
+      <input id="authName" placeholder="مثلاً علی">
+    </div>
+    <div class="field">
+      <label>ایمیل</label>
+      <input id="authEmail" type="email" placeholder="email@example.com">
+    </div>
+    <div class="field">
+      <label>رمز عبور</label>
+      <input id="authPass" type="password" placeholder="••••••">
+    </div>
+    <button onclick="doAuth()" id="authBtn">ورود</button>
+    <div class="msg" id="authMsg"></div>
+    <p style="margin-top:12px;font-size:13px;">
+      <span id="authSwitchText">حساب نداری؟</span>
+      <span class="switch-link" onclick="toggleAuthMode()" id="authSwitchLink">ثبت‌نام کن</span>
+    </p>
+  </div>
+
+  <!-- LOGGED-IN BAR -->
+  <div id="userBar" class="card hidden">
+    <div class="row" style="justify-content:space-between;">
+      <span style="color:#fff;">سلام <b id="userName"></b> 👋 | امتیاز: <b id="userScore" style="color:#ffd700">0</b></span>
+      <button onclick="logout()" style="background:#ff6b6b;color:#fff;">خروج</button>
+    </div>
+  </div>
+
+  <!-- MATCHES -->
+  <div id="view-matches">
+    <div id="needLogin" class="card">برای ثبت پیش‌بینی اول وارد شو.</div>
+    <div id="matchList"></div>
+  </div>
+
+  <!-- LEADERBOARD -->
+   
+
+
+  <div id="view-leaderboard" class="hidden">
+    <div class="card">
+      <h2 style="color:#ffd700;margin-bottom:14px;">🏆 جدول امتیازات</h2>
+      <table>
+        <thead><tr><th>رتبه</th><th>کاربر</th><th>امتیاز</th></tr></thead>
+        <tbody id="lbBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="view-profile" class="hidden">
+    <div id="profileNeedLogin" class="card">برای دیدن پروفایل وارد شو.</div>
+    <div id="profileContent" class="hidden">
+      <div class="card">
+        <h2 style="color:#ffd700;">👤 <span id="pName"></span></h2>
+        <p style="font-size:13px;color:#bfe9cf;margin-top:4px;" id="pEmail"></p>
+        <div class="stat-grid">
+          <div class="stat"><b id="pTotal">0</b><span>امتیاز کل</span></div>
+          <div class="stat"><b id="pCount">0</b><span>تعداد پیش‌بینی</span></div>
+          <div class="stat"><b id="pExact">0</b><span>نتیجه دقیق (۱۰)</span></div>
+          <div class="stat"><b id="pDiff">0</b><span>برنده+تفاضل (۸)</span></div>
+          <div class="stat"><b id="pWinner">0</b><span>فقط برنده (۵)</span></div>
+          <div class="stat"><b id="pWrong">0</b><span>اشتباه (۱)</span></div>
+          <div class="stat"><b id="pSolo">0</b><span>🏆 برد تک‌نفره</span></div>
+          
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="color:#ffd700;margin-bottom:10px;">📋 ریز پیش‌بینی‌ها</h3>
+        <table>
+          <thead><tr><th>بازی</th><th>پیش‌بینی</th><th>نتیجه</th><th>امتیاز</th></tr></thead>
+          <tbody id="pDetail"></tbody>
+        </table>
+      </div>
+      <div class="card scoring-info">
+        <b>سیستم امتیازدهی:</b><br>
+        🎯 نتیجه دقیق = <b>۱۰ امتیاز</b><br>
+        ✅ برنده درست + تفاضل گل درست = <b>۸ امتیاز</b><br>
+        👍 فقط برنده درست = <b>۵ امتیاز</b><br>
+        ❌ پیش‌بینی اشتباه = <b>۱ امتیاز</b>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="view-admin" class="hidden">
+    <div class="card">
+      <h2 style="color:#ffd700;margin-bottom:14px;">⚙️ پنل ادمین — ثبت نتیجه واقعی</h2>
+      <div id="adminMatches"></div>
+    </div>
+  </div>
+<!-- USER MODAL -->
+  <div id="userModal" class="modal-overlay hidden" onclick="closeUserModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeUserModal()">✕</button>
+      <h2 style="color:#ffd700;">👤 <span id="mName"></span></h2>
+      <div class="stat-grid">
+        <div class="stat"><b id="mTotal">0</b><span>امتیاز کل</span></div>
+        <div class="stat"><b id="mCount">0</b><span>تعداد پیش‌بینی</span></div>
+        <div class="stat"><b id="mExact">0</b><span>نتیجه دقیق (۱۰)</span></div>
+        <div class="stat"><b id="mDiff">0</b><span>برنده+تفاضل (۸)</span></div>
+        <div class="stat"><b id="mWinner">0</b><span>فقط برنده (۵)</span></div>
+        <div class="stat"><b id="mWrong">0</b><span>اشتباه (۱)</span></div>
+        <div class="stat"><b id="mSolo">0</b><span>🏆 برد تک‌نفره</span></div>
+
+      </div>
+      <h3 style="color:#ffd700;margin:18px 0 10px;">📋 ریز پیش‌بینی‌ها</h3>
+      <table>
+        <thead><tr><th>بازی</th><th>پیش‌بینی</th><th>نتیجه</th><th>امتیاز</th></tr></thead>
+        <tbody id="mDetail"></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- PRIZE / ANNOUNCEMENT MODAL -->
+<div id="prizeModal" class="modal-overlay hidden">
+  <div class="modal-box" style="text-align:center">
+    <h2 id="prizeTitle" style="color:#ffd700"></h2>
+    <p id="prizeText" style="color:#fff;margin-top:14px;font-size:16px;line-height:2"></p>
+    <button onclick="closePrizeModal()" style="margin-top:18px">باشه 🎉</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ====================== داده‌ی پایه ====================== */
+const FLAGS = {
+  // گروه A
+  mx: `<svg viewBox="0 0 24 16"><rect width="8" height="16" fill="#006847"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#CE1126"/><circle cx="12" cy="8" r="2" fill="#006847" opacity="0.3"/></svg>`,
+  kr: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="3.5" fill="#C60C30"/><path d="M12 8 a3.5 3.5 0 0 1 0-3.5 a1.75 1.75 0 0 0 0 3.5" fill="#003478"/><rect x="3" y="2" width="1" height="4" fill="#000" transform="rotate(33 3 4)"/><rect x="20" y="10" width="1" height="4" fill="#000" transform="rotate(33 20 12)"/></svg>`,
+  za: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#fff"/><polygon points="0,0 8,8 0,16" fill="#007A4D"/><polygon points="0,0 6,0 10,4 6,4" fill="#000"/><polygon points="0,16 6,16 10,12 6,12" fill="#000"/><rect x="10" y="0" width="14" height="5" fill="#DE3831"/><rect x="10" y="11" width="14" height="5" fill="#002395"/><polygon points="8,8 10,6 24,6 24,10 10,10" fill="#FFB612"/></svg>`,
+  cz: `<svg viewBox="0 0 24 16"><rect width="24" height="8" fill="#fff"/><rect y="8" width="24" height="8" fill="#D7141A"/><polygon points="0,0 10,8 0,16" fill="#11457E"/></svg>`,
+
+  // گروه B
+  ca: `<svg viewBox="0 0 24 16"><rect width="6" height="16" fill="#FF0000"/><rect x="6" width="12" height="16" fill="#fff"/><rect x="18" width="6" height="16" fill="#FF0000"/><path d="M12,3 L13,7 L11,7 Z M12,13 L11,9 L13,9 Z M9,8 L11,7.5 L11,8.5 Z M15,8 L13,7.5 L13,8.5 Z" fill="#FF0000"/></svg>`,
+  ch: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#DA291C"/><rect x="10" y="4" width="4" height="8" fill="#fff"/><rect x="8" y="6" width="8" height="4" fill="#fff"/></svg>`,
+  qa: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#8D1B3D"/><polygon points="0,0 8,1.78 0,3.56 8,5.33 0,7.11 8,8.89 0,10.67 8,12.44 0,14.22 8,16 0,16" fill="#fff"/></svg>`,
+  ba: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#002395"/><polygon points="6,0 20,0 6,16" fill="#FECB00"/><g fill="#fff"><circle cx="7" cy="2" r="0.8"/><circle cx="9" cy="4" r="0.8"/><circle cx="11" cy="6" r="0.8"/><circle cx="13" cy="8" r="0.8"/><circle cx="15" cy="10" r="0.8"/></g></svg>`,
+
+  // گروه C
+  br: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#009c3b"/><polygon points="12,2 22,8 12,14 2,8" fill="#FFDF00"/><circle cx="12" cy="8" r="3" fill="#002776"/></svg>`,
+  ma: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#C1272D"/><path d="M12,4 L13.2,7.2 L16.5,7.2 L13.8,9.2 L14.8,12.5 L12,10.4 L9.2,12.5 L10.2,9.2 L7.5,7.2 L10.8,7.2 Z" fill="none" stroke="#006233" stroke-width="0.8"/></svg>`,
+  sco: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#005EB8"/><path d="M0,0 L24,16 M24,0 L0,16" stroke="#fff" stroke-width="2.5"/></svg>`,
+  ht: `<svg viewBox="0 0 24 16"><rect width="24" height="8" fill="#00209F"/><rect y="8" width="24" height="8" fill="#D21034"/><rect x="8" y="4" width="8" height="8" fill="#fff"/></svg>`,
+
+  // گروه D
+  us: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#B22234"/><g fill="#fff"><rect y="1.23" width="24" height="1.23"/><rect y="3.69" width="24" height="1.23"/><rect y="6.15" width="24" height="1.23"/><rect y="8.62" width="24" height="1.23"/><rect y="11.08" width="24" height="1.23"/><rect y="13.54" width="24" height="1.23"/></g><rect width="10" height="8.62" fill="#3C3B6E"/></svg>`,
+  au: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#00008B"/><rect width="10" height="8" fill="#00008B"/><path d="M0,0 L10,8 M10,0 L0,8" stroke="#fff" stroke-width="1.5"/><path d="M5,0 V8 M0,4 H10" stroke="#fff" stroke-width="2"/><path d="M5,0 V8 M0,4 H10" stroke="#C8102E" stroke-width="1"/><circle cx="18" cy="12" r="1.2" fill="#fff"/></svg>`,
+  py: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#D52B1E"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#0038A8"/><circle cx="12" cy="8" r="2" fill="none" stroke="#000" stroke-width="0.3"/></svg>`,
+  tr: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#E30A17"/><circle cx="9.5" cy="8" r="3.5" fill="#fff"/><circle cx="10.8" cy="8" r="2.8" fill="#E30A17"/><polygon points="14,8 12.5,7 13.5,8.5 12.5,9 13.8,8" fill="#fff"/></svg>`,
+
+  // گروه E
+  de: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#000"/><rect y="5.33" width="24" height="5.33" fill="#DD0000"/><rect y="10.66" width="24" height="5.34" fill="#FFCE00"/></svg>`,
+  ec: `<svg viewBox="0 0 24 16"><rect width="24" height="8" fill="#FFD100"/><rect y="8" width="24" height="4" fill="#0033A0"/><rect y="12" width="24" height="4" fill="#CE1126"/></svg>`,
+  ci: `<svg viewBox="0 0 24 16"><rect width="8" height="16" fill="#F77F00"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#009E60"/></svg>`,
+  cw: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#002B7F"/><rect y="12" width="24" height="2.5" fill="#F9E814"/><circle cx="6" cy="5" r="1.5" fill="#fff"/><circle cx="8.5" cy="3.5" r="1" fill="#fff"/></svg>`,
+
+  // گروه F
+  nl: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#AE1C28"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#21468B"/></svg>`,
+  jp: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4" fill="#BC002D"/></svg>`,
+  tn: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#E70013"/><circle cx="12" cy="8" r="4" fill="#fff"/><circle cx="13" cy="8" r="3.2" fill="#E70013"/><polygon points="11.5,6 12.2,7.8 14,7.8 12.6,9 13.1,10.8 11.5,9.5 9.9,10.8 10.4,9 9,7.8 10.8,7.8" fill="#E70013"/></svg>`,
+  se: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#006AA7"/><rect x="7" width="3" height="16" fill="#FECC00"/><rect y="6.5" width="24" height="3" fill="#FECC00"/></svg>`,
+
+  // گروه G
+  be: `<svg viewBox="0 0 24 16"><rect width="8" height="16" fill="#000"/><rect x="8" width="8" height="16" fill="#FFD90C"/><rect x="16" width="8" height="16" fill="#F31830"/></svg>`,
+  ir: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#239F40"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#DA0000"/><circle cx="12" cy="8" r="2" fill="#DA0000"/></svg>`,
+  eg: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#CE1126"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#000"/><path d="M11,7 L12,6 L13,7 L12.5,9 L11.5,9 Z" fill="#C09300"/></svg>`,
+  nz: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#00247D"/><rect width="10" height="8" fill="#00247D"/><path d="M0,0 L10,8 M10,0 L0,8" stroke="#fff" stroke-width="1.5"/><path d="M5,0 V8 M0,4 H10" stroke="#fff" stroke-width="2"/><path d="M5,0 V8 M0,4 H10" stroke="#C8102E" stroke-width="1"/><g fill="#C8102E"><circle cx="18" cy="4" r="0.9"/><circle cx="20" cy="6" r="0.9"/><circle cx="19" cy="9" r="0.9"/><circle cx="16.5" cy="7" r="0.9"/></g></svg>`,
+
+  // گروه H
+  es: `<svg viewBox="0 0 24 16"><rect width="24" height="4" fill="#AA151B"/><rect y="4" width="24" height="8" fill="#F1BF00"/><rect y="12" width="24" height="4" fill="#AA151B"/></svg>`,
+  uy: `<svg viewBox="0 0 24 16"><g fill="#fff"><rect width="24" height="16"/></g><g fill="#0038A8"><rect y="1.78" width="24" height="1.78"/><rect y="5.33" width="24" height="1.78"/><rect y="8.89" width="24" height="1.78"/><rect y="12.44" width="24" height="1.78"/></g><rect width="8" height="8" fill="#fff"/><circle cx="4" cy="4" r="2" fill="#F9D616"/></svg>`,
+  sa: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#006C35"/><rect x="4" y="9" width="16" height="1.5" fill="#fff" rx="0.75"/><text x="12" y="7.5" fill="#fff" font-size="3.5" text-anchor="middle" font-family="serif">لا إله إلا الله</text></svg>`,
+  cv: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#003893"/><rect y="8.5" width="24" height="2" fill="#fff"/><rect y="10.5" width="24" height="1.5" fill="#CF2027"/><rect y="12" width="24" height="2" fill="#fff"/><g fill="#F7D116"><circle cx="7" cy="11" r="0.7"/><circle cx="8.5" cy="12" r="0.7"/><circle cx="10.5" cy="12.5" r="0.7"/><circle cx="12.5" cy="12" r="0.7"/><circle cx="14" cy="11" r="0.7"/></g></svg>`,
+
+  // گروه I
+  fr: `<svg viewBox="0 0 24 16"><rect width="8" height="16" fill="#002395"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#ED2939"/></svg>`,
+  sn: `<svg viewBox="0 0 24 16"><rect width="8" height="16" fill="#00853F"/><rect x="8" width="8" height="16" fill="#FDEF42"/><rect x="16" width="8" height="16" fill="#E31B23"/><polygon points="12,5 12.8,7.5 15,7.5 13.2,9 13.8,11.5 12,10 10.2,11.5 10.8,9 9,7.5 11.2,7.5" fill="#00853F"/></svg>`,
+  no: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#BA0C2F"/><rect x="6" width="4" height="16" fill="#fff"/><rect y="6" width="24" height="4" fill="#fff"/><rect x="7" width="2" height="16" fill="#00205B"/><rect y="7" width="24" height="2" fill="#00205B"/></svg>`,
+  iq: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#CE1126"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#000"/><text x="12" y="9" fill="#007A3D" font-size="3" text-anchor="middle" font-family="serif">الله</text></svg>`,
+
+  // گروه J
+  ar: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#74ACDF"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#74ACDF"/><circle cx="12" cy="8" r="1.8" fill="#F6B40E"/></svg>`,
+  at: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#ED2939"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#ED2939"/></svg>`,
+  dz: `<svg viewBox="0 0 24 16"><rect width="12" height="16" fill="#006233"/><rect x="12" width="12" height="16" fill="#fff"/><circle cx="12" cy="8" r="3" fill="#D21034"/><circle cx="13" cy="8" r="2.5" fill="#006233"/><polygon points="13.5,6.5 14,8 15,7 14,8.5 15.5,8.5 14,9 15,10 14,9.2 13.5,10.5 13.5,9 12.5,9.5 13.5,8.5" fill="#D21034"/></svg>`,
+  jo: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#000"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#007A3D"/><polygon points="0,0 10,8 0,16" fill="#CE1126"/><polygon points="3.5,7 4,8 5,7.2 4.5,8.2 5.5,8 4.5,8.5 5,9.5 4.2,8.8 3.5,9.5 3.8,8.5 3,8.5 3.8,8" fill="#fff"/></svg>`,
+
+  // گروه K
+  pt: `<svg viewBox="0 0 24 16"><rect width="9" height="16" fill="#006600"/><rect x="9" width="15" height="16" fill="#FF0000"/><circle cx="9" cy="8" r="3" fill="#FFCC00"/></svg>`,
+  co: `<svg viewBox="0 0 24 16"><rect width="24" height="8" fill="#FCD116"/><rect y="8" width="24" height="4" fill="#003893"/><rect y="12" width="24" height="4" fill="#CE1126"/></svg>`,
+  uz: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#1EB53A"/><rect y="5.33" width="24" height="0.8" fill="#CE1126"/><rect y="6.13" width="24" height="4" fill="#fff"/><rect y="10.13" width="24" height="0.8" fill="#CE1126"/><rect y="10.93" width="24" height="5.07" fill="#0099B5"/><circle cx="5" cy="3" r="1.5" fill="#fff"/><circle cx="5.8" cy="3" r="1.3" fill="#1EB53A"/></svg>`,
+  cg: `<svg viewBox="0 0 24 16"><polygon points="0,0 16,0 8,16 0,16" fill="#009543"/><polygon points="16,0 24,0 24,16 8,16" fill="#DC241F"/><polygon points="8,0 24,0 16,16 0,16" fill="#FBDE4A" opacity="0.8"/></svg>`,
+
+  // گروه L
+  gb: `<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#012169"/><path d="M0,0 L24,16 M24,0 L0,16" stroke="#fff" stroke-width="3"/><path d="M0,0 L24,16 M24,0 L0,16" stroke="#C8102E" stroke-width="1.5"/><path d="M12,0 V16 M0,8 H24" stroke="#fff" stroke-width="4.5"/><path d="M12,0 V16 M0,8 H24" stroke="#C8102E" stroke-width="2.5"/></svg>`,
+  hr: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#FF0000"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#171796"/><g fill="#FF0000"><rect x="10" y="4" width="1.3" height="1.3"/><rect x="12.6" y="4" width="1.3" height="1.3"/><rect x="11.3" y="5.3" width="1.3" height="1.3"/><rect x="10" y="6.6" width="1.3" height="1.3"/><rect x="12.6" y="6.6" width="1.3" height="1.3"/></g></svg>`,
+  pa: `<svg viewBox="0 0 24 16"><rect width="12" height="8" fill="#fff"/><rect x="12" width="12" height="8" fill="#CE1126"/><rect y="8" width="12" height="8" fill="#0038A8"/><rect x="12" y="8" width="12" height="8" fill="#fff"/><polygon points="6,2 6.7,4 9,4 7.2,5.2 7.8,7.5 6,6 4.2,7.5 4.8,5.2 3,4 5.3,4" fill="#0038A8"/><polygon points="18,10 18.7,12 21,12 19.2,13.2 19.8,15.5 18,14 16.2,15.5 16.8,13.2 15,12 17.3,12" fill="#CE1126"/></svg>`,
+  gh: `<svg viewBox="0 0 24 16"><rect width="24" height="5.33" fill="#CE1126"/><rect y="5.33" width="24" height="5.33" fill="#FCD116"/><rect y="10.66" width="24" height="5.34" fill="#006B3F"/><polygon points="12,6 12.6,7.8 14.5,7.8 13,9 13.5,10.8 12,9.7 10.5,10.8 11,9 9.5,7.8 11.4,7.8" fill="#000"/></svg>`,
+
+
+};
+
+const DEFAULT_MATCHES = [
+  {id:1, date:"1405/03/31", time:"22:30", home:"ایران",     hc:"ir", away:"بلژیک",   ac:"be"},
+  {id:2, date:"1405/03/31", time:"23:00", home:"اسپانیا",   hc:"es", away:"عربستان", ac:"sa"},
+  {id:3, date:"1405/04/01", time:"20:30", home:"ارگوئه",    hc:"uy", away:"کیپ ورد", ac:"cv"},
+  {id:4, date:"1405/04/01", time:"23:00", home:"مصر",       hc:"eg", away:"نیوزیلند", ac:"nz"},
+  {id:5, date:"1405/04/01", time:"18:00", home:"اتریش",     hc:"at", away:"آرژانتین", ac:"ar"},
+  {id:6, date:"1405/04/02", time:"20:30", home:"قرانسه",    hc:"fr", away:"عراق",     ac:"iq"},
+  {id:7, date:"1405/04/02", time:"23:00", home:"سنگال",     hc:"sn", away:"نروژ",     ac:"no"},
+  {id:8, date:"1405/04/02", time:"18:00", home:"الجزایر",   hc:"dz", away:"اردن",     ac:"jo"}
+];
+
+
+const ADMIN_EMAIL = "admin@cup.com";
+
+
+/* ====================== تاریخ و زمان (شمسی) ====================== */
+function jalaliToGregorian(jy, jm, jd){
+  jy += 1595;
+  let days = -355668 + (365*jy) + (~~(jy/33)*8) + ~~(((jy%33)+3)/4) + jd
+           + ((jm < 7) ? (jm-1)*31 : ((jm-7)*30) + 186);
+  let gy = 400 * ~~(days/146097);
+  days %= 146097;
+  if(days > 36524){ gy += 100 * ~~(--days/36524); days %= 36524; if(days >= 365) days++; }
+  gy += 4 * ~~(days/1461);
+  days %= 1461;
+  if(days > 365){ gy += ~~((days-1)/365); days = (days-1)%365; }
+  let gd = days + 1;
+  const sal_a = [0,31,((gy%4===0 && gy%100!==0)||(gy%400===0))?29:28,31,30,31,30,31,31,30,31,30,31];
+  let gm;
+  for(gm=0; gm<13 && gd>sal_a[gm]; gm++) gd -= sal_a[gm];
+  return {gy, gm, gd};
+}
+function matchStartDate(m){
+  const [jy,jm,jd] = (m.date||"1400/01/01").split('/').map(Number);
+  const [hh,mm]    = (m.time||"00:00").split(':').map(Number);
+  const g = jalaliToGregorian(jy,jm,jd);
+  return new Date(g.gy, g.gm-1, g.gd, hh||0, mm||0, 0);
+}
+const DAY_MS = 24*60*60*1000;
+function predictionDeadline(m){ return new Date(matchStartDate(m).getTime() - DAY_MS); }
+function isPredictionOpen(m){ return Date.now() < predictionDeadline(m).getTime(); }
+
+function fmtCountdown(ms){
+  if(ms<=0) return "";
+  let s=Math.floor(ms/1000);
+  const d=Math.floor(s/86400); s-=d*86400;
+  const h=Math.floor(s/3600);  s-=h*3600;
+  const mn=Math.floor(s/60);   s-=mn*60;
+  return `${d} روز و ${h} ساعت و ${mn} دقیقه و ${s} ثانیه`;
+}
+function updateTimers(){
+  const now=Date.now();
+  document.querySelectorAll('.match-timer').forEach(el=>{
+    const dl=+el.dataset.deadline, start=+el.dataset.start;
+    if(now < dl){
+      el.classList.remove('closed');
+      el.innerHTML = `⏳ مهلت ثبت پیش‌بینی: ${fmtCountdown(dl-now)}`;
+    } else if(now < start){
+      el.classList.add('closed');
+      el.innerHTML = `🔒 مهلت ثبت پیش‌بینی تمام شد — تا شروع بازی: ${fmtCountdown(start-now)}`;
+    } else {
+      el.classList.add('closed');
+      el.innerHTML = `⏱️ بازی برگزار شد`;
+    }
+  });
+}
+setInterval(updateTimers, 1000);
+updateTimers();
+
+/* ====================== ذخیره‌سازی ====================== */
+function db(){
+  let d = JSON.parse(localStorage.getItem("wc_db") || "null");
+  if(!d){
+    d = { users:{}, matches: DEFAULT_MATCHES };
+    localStorage.setItem("wc_db", JSON.stringify(d));
+  }
+  if(!d.matches) d.matches = DEFAULT_MATCHES;
+  return d;
+}
+function save(d){ localStorage.setItem("wc_db", JSON.stringify(d)); }
+
+let current = localStorage.getItem("wc_current") || null;
+let authMode = "login"; // login | register
+
+/* ====================== امتیازدهی ====================== */
+function calcPoints(pred, result){
+  const ph=+pred.h, pa=+pred.a, rh=+result.h, ra=+result.a;
+  if(ph===rh && pa===ra) return 10;                 // نتیجه دقیق
+  const predW = Math.sign(ph-pa);                    // برنده پیش‌بینی
+  const realW = Math.sign(rh-ra);                    // برنده واقعی
+  if(predW===realW){
+    if((ph-pa)===(rh-ra)) return 8;                  // برنده + تفاضل
+    return 5;                                        // فقط برنده
+  }
+  return 1;                                           // اشتباه
+}
+
+function userTotal(u){
+  const d=db(); let t=0;
+  d.matches.forEach(m=>{
+    const p=u.predictions[m.id];
+    if(p && m.result) t+=calcPoints(p,m.result);
+  });
+  return t + (u.bonus||0);
+}
+
+/* ====================== احراز هویت ====================== */
+function toggleAuthMode(){
+  authMode = authMode==="login" ? "register":"login";
+  const reg = authMode==="register";
+  document.getElementById("authTitle").textContent = reg?"ثبت‌نام":"ورود";
+  document.getElementById("authBtn").textContent   = reg?"ثبت‌نام":"ورود";
+  document.getElementById("nameField").style.display = reg?"block":"none";
+  document.getElementById("authSwitchText").textContent = reg?"حساب داری؟":"حساب نداری؟";
+  document.getElementById("authSwitchLink").textContent = reg?"وارد شو":"ثبت‌نام کن";
+  msg("authMsg","");
+}
+function msg(id,text,ok){
+  const e=document.getElementById(id);
+  e.textContent=text; e.className="msg "+(ok?"ok":"err");
+}
+function doAuth(){
+  const email=document.getElementById("authEmail").value.trim().toLowerCase();
+  const pass =document.getElementById("authPass").value;
+  if(!email || !pass){ msg("authMsg","ایمیل و رمز را وارد کن"); return; }
+  const d=db();
+  if(authMode==="register"){
+    const name=document.getElementById("authName").value.trim();
+    if(!name){ msg("authMsg","نام را وارد کن"); return; }
+    if(d.users[email]){ msg("authMsg","این ایمیل قبلاً ثبت شده"); return; }
+    d.users[email]={ name, email, pass, predictions:{} };
+    save(d);
+    current=email; localStorage.setItem("wc_current",email);
+    msg("authMsg","ثبت‌نام موفق بود ✅",true);
+    afterLogin();
+  } else {
+    const u=d.users[email];
+    if(!u || u.pass!==pass){ msg("authMsg","ایمیل یا رمز اشتباه است"); return; }
+    current=email; localStorage.setItem("wc_current",email);
+    afterLogin();
+  }
+}
+function logout(){
+  current=null; localStorage.removeItem("wc_current");
+  refreshUI(); showTab("matches");
+}
+function isAdmin(){ return current===ADMIN_EMAIL; }
+
+/* ====================== UI ====================== */
+function afterLogin(){ refreshUI(); renderMatches(); checkNotifications(); }
+function refreshUI(){
+  const logged=!!current;
+  document.getElementById("auth").classList.toggle("hidden",logged);
+  document.getElementById("userBar").classList.toggle("hidden",!logged);
+  document.getElementById("needLogin").style.display = logged?"none":"block";
+  document.getElementById("tab-admin").classList.toggle("hidden", !isAdmin());
+  if(logged){
+    const u=db().users[current];
+    document.getElementById("userName").textContent=u.name;
+    document.getElementById("userScore").textContent=userTotal(u);
+  }
+}
+function showTab(name){
+  ["matches","leaderboard","profile","admin"].forEach(t=>{
+    document.getElementById("view-"+t).classList.toggle("hidden", t!==name);
+    document.getElementById("tab-"+t).classList.toggle("active", t===name);
+  });
+  if(name==="matches")     renderMatches();
+  if(name==="leaderboard") renderLeaderboard();
+  if(name==="profile")     renderProfile();
+  if(name==="admin")       renderAdmin();
+}
+
+/* ====================== بازی‌ها ====================== */
+function renderMatches(){
+  const d=db();
+  const box=document.getElementById("matchList");
+  box.innerHTML="";
+  if(!current) return;
+  const u=d.users[current];
+  d.matches.forEach((m,idx)=>{
+    const pred=u.predictions[m.id];
+    const locked=!!pred;
+    const finished=!!m.result;
+    const open=isPredictionOpen(m);
+    const canEdit=!locked && open;
+    const dl=predictionDeadline(m);
+    const start=matchStartDate(m);
+    const flag = code => `<span class="flag-svg">${FLAGS[code]||''}</span>`;
+    let html=`<div class="match ${locked?'locked':''}" style="animation-delay:${idx*0.08}s">
+      <div class="meta">📅 ${m.date} — ⏰ ${m.time||'--:--'}</div>
+      <div class="teams">
+        <div class="team">${flag(m.hc)}<span class="tname">${m.home}</span></div>
+        <input class="score-in" id="h_${m.id}" type="number" min="0" value="${pred?pred.h:''}" ${canEdit?'':'disabled'}>
+        <span class="vs">VS</span>
+        <input class="score-in" id="a_${m.id}" type="number" min="0" value="${pred?pred.a:''}" ${canEdit?'':'disabled'}>
+        <div class="team">${flag(m.ac)}<span class="tname">${m.away}</span></div>
+      </div>`;
+    if(locked){
+      html+=`<div class="result-tag">پیش‌بینی شما: ${pred.h} - ${pred.a} (ثبت‌شده، غیرقابل تغییر)`;
+      if(finished){
+        const pts=calcPoints(pred,m.result);
+        html+=` | نتیجه واقعی: ${m.result.h} - ${m.result.a} | <span class="points-badge">${pts} امتیاز</span>`;
+      }
+      html+=`</div>`;
+    } else if(open){
+      html+=`<div class="row" style="justify-content:center;margin-top:12px">
+        <button onclick="submitPred(${m.id})">🎯 ثبت پیش‌بینی</button></div>`;
+    } else {
+      html+=`<div class="result-tag" style="color:#ff9b9b">🔒 مهلت ثبت پیش‌بینی این بازی به پایان رسیده است</div>`;
+    }
+    html+=`<div class="match-timer" data-deadline="${dl.getTime()}" data-start="${start.getTime()}"></div>`;
+    html+=`</div>`;
+    box.innerHTML+=html;
+  });
+  updateTimers();
+}
+
+
+/* ====================== لیدربرد ====================== */
+/* ====================== لیدربرد ====================== */
+function renderLeaderboard(){
+  const d=db();
+  const arr=Object.values(d.users)
+    .filter(u=>u.email!==ADMIN_EMAIL)
+    .map(u=>({name:u.name, email:u.email, score:userTotal(u)}))
+    .sort((a,b)=>b.score-a.score);
+  const body=document.getElementById("lbBody");
+  body.innerHTML="";
+  if(arr.length===0){
+    body.innerHTML=`<tr><td colspan="3" style="color:#bfe9cf">هنوز کاربری نیست</td></tr>`;
+    return;
+  }
+  arr.forEach((u,i)=>{
+    const rankClass = i<3 ? `rank-${i+1}` : "";
+    const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":(i+1);
+    body.innerHTML+=`<tr>
+      <td class="${rankClass}">${medal}</td>
+      <td><span class="lb-name" onclick="showUserProfile('${u.email}')">${u.name}</span></td>
+      <td><b>${u.score}</b></td>
+    </tr>`;
+  });
+}
+
+/* ====================== مودال پروفایل کاربر ====================== */
+function showUserProfile(email){
+  const d=db();
+  const u=d.users[email];
+  if(!u) return;
+  document.getElementById("mName").textContent=u.name;
+
+  let total=0,count=0,exact=0,diff=0,winner=0,wrong=0;
+  const detail=document.getElementById("mDetail");
+  detail.innerHTML="";
+  d.matches.forEach(m=>{
+    const p=u.predictions[m.id];
+    if(!p) return;
+    count++;
+    let pts="—", res="در انتظار";
+    if(m.result){
+      const pt=calcPoints(p,m.result);
+      total+=pt; pts=pt; res=`${m.result.h}-${m.result.a}`;
+      if(pt===10)exact++; else if(pt===8)diff++; else if(pt===5)winner++; else wrong++;
+    }
+    detail.innerHTML+=`<tr><td>${m.home} - ${m.away}</td><td>${p.h}-${p.a}</td><td>${res}</td><td>${pts}</td></tr>`;
+  });
+  if(count===0) detail.innerHTML=`<tr><td colspan="4" style="color:#bfe9cf">هنوز پیش‌بینی نکرده</td></tr>`;
+
+  document.getElementById("mTotal").textContent=total;
+  document.getElementById("mCount").textContent=count;
+  document.getElementById("mExact").textContent=exact;
+  document.getElementById("mDiff").textContent=diff;
+  document.getElementById("mWinner").textContent=winner;
+  document.getElementById("mWrong").textContent=wrong;
+  document.getElementById("mWrong").textContent=wrong;
+  document.getElementById("mSolo").textContent = u.soloExactWins || 0;
+
+
+  document.getElementById("userModal").classList.remove("hidden");
+}
+function closeUserModal(e){
+  if(e && e.target.id!=="userModal" && e.type==="click" && e.currentTarget.id!=="userModal") return;
+  document.getElementById("userModal").classList.add("hidden");
+}
+
+function saveSchedule(id){
+  const date=document.getElementById("md_"+id).value.trim();
+  const time=document.getElementById("mt_"+id).value.trim();
+  if(!date){ alert("تاریخ بازی را وارد کن (مثل 1405/04/10)"); return; }
+  const d=db();
+  const m=d.matches.find(x=>x.id===id);
+  m.date=date;
+  m.time=time;
+  save(d);
+  alert("تاریخ و ساعت بازی ذخیره شد ✅");
+  renderMatches();
+  renderAdmin();
+}
+
+/* ====================== پایل ====================== */
+function renderProfile(){
+  const logged=!!current;
+  document.getElementById("profileNeedLogin").classList.toggle("hidden",logged);
+  document.getElementById("profileContent").classList.toggle("hidden",!logged);
+  if(!logged) return;
+  const d=db(); const u=d.users[current];
+  document.getElementById("pName").textContent=u.name;
+  document.getElementById("pEmail").textContent=u.email;
+
+  let total=0,count=0,exact=0,diff=0,winner=0,wrong=0;
+  const detail=document.getElementById("pDetail");
+  detail.innerHTML="";
+  d.matches.forEach(m=>{
+    const p=u.predictions[m.id];
+    if(!p) return;
+    count++;
+    let pts="—", res="در انتظار";
+    if(m.result){
+      const pt=calcPoints(p,m.result);
+      total+=pt; pts=pt; res=`${m.result.h}-${m.result.a}`;
+      if(pt===10)exact++; else if(pt===8)diff++; else if(pt===5)winner++; else wrong++;
+    }
+    detail.innerHTML+=`<tr><td>${m.home} - ${m.away}</td><td>${p.h}-${p.a}</td><td>${res}</td><td>${pts}</td></tr>`;
+  });
+  if(count===0) detail.innerHTML=`<tr><td colspan="4" style="color:#bfe9cf">هنوز پیش‌بینی نکردی</td></tr>`;
+  document.getElementById("pTotal").textContent=total;
+  document.getElementById("pCount").textContent=count;
+  document.getElementById("pExact").textContent=exact;
+  document.getElementById("pDiff").textContent=diff;
+  document.getElementById("pWinner").textContent=winner;
+  document.getElementById("pWrong").textContent=wrong;
+  document.getElementById("pSolo").textContent = u.soloExactWins || 0;
+}
+
+
+/* ====================== پنل ادمین ====================== */
+function renderAdmin(){
+  if(!isAdmin()) return;
+  const d=db();
+  const box=document.getElementById("adminMatches");
+  box.innerHTML="";
+
+  // فرم افزودن بازی جدید
+  box.innerHTML+=`<div class="match" style="border:1px solid #ffd700">
+    <div class="meta" style="text-align:center;margin-bottom:10px">➕ افزودن بازی جدید</div>
+    <div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">
+      <input class="field" id="new_home" type="text" placeholder="تیم میزبان" style="max-width:130px">
+      <input class="field" id="new_hc" type="text" placeholder="کد (ir)" style="max-width:80px">
+      <input class="field" id="new_away" type="text" placeholder="تیم مهمان" style="max-width:130px">
+      <input class="field" id="new_ac" type="text" placeholder="کد (be)" style="max-width:80px">
+    </div>
+    <div class="row" style="justify-content:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <input class="field" id="new_date" type="text" placeholder="1405/04/10" style="max-width:140px">
+      <input class="field" id="new_time" type="time" style="max-width:120px">
+      <button onclick="addMatch()">➕ افزودن</button>
+    </div>
+  </div>`;
+
+  d.matches.forEach(m=>{
+    const r=m.result||{h:"",a:""};
+    box.innerHTML+=`<div class="match">
+      <div class="teams">
+        <span class="tname">${m.home}</span>
+        <input class="score-in" id="rh_${m.id}" type="number" min="0" value="${r.h}">
+        <span class="vs">VS</span>
+        <input class="score-in" id="ra_${m.id}" type="number" min="0" value="${r.a}">
+        <span class="tname">${m.away}</span>
+      </div>
+
+      <div class="row" style="justify-content:center;gap:8px;margin-top:12px">
+        <input class="field" id="md_${m.id}" type="text" placeholder="1405/04/10" value="${m.date||''}" style="max-width:140px">
+        <input class="field" id="mt_${m.id}" type="time" value="${m.time||''}" style="max-width:120px">
+        <button onclick="saveSchedule(${m.id})">📅 ذخیره زمان</button>
+      </div>
+
+      <div class="row" style="justify-content:center;gap:8px;margin-top:8px">
+        <button onclick="setResult(${m.id})">💾 ثبت نتیجه</button>
+        <button onclick="deleteMatch(${m.id})" style="background:#a33">🗑 حذف بازی</button>
+      </div>
+    </div>`;
+  });
+
+  
+
+  // ⭐ ویرایش امتیاز دستی کاربران
+  let usersHtml = `<div class="match" style="border:1px solid #ffd700">
+    <div class="meta" style="text-align:center;margin-bottom:10px">⭐ امتیاز دستی کاربران</div>`;
+  Object.values(d.users).forEach(u=>{
+    if(u.email===ADMIN_EMAIL) return;
+    const calc = userTotal(u) - (u.bonus||0);
+    usersHtml += `<div class="row" style="justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="color:#fff;flex:1;min-width:120px">${u.name}
+        <small style="color:#bfe9cf">(از پیش‌بینی: ${calc} | کل: ${userTotal(u)})</small></span>
+      <input class="field" id="bonus_${u.email}" type="number" value="${u.bonus||0}" style="max-width:90px" title="امتیاز دستی">
+      <button onclick="saveBonus('${u.email}')">💾 ذخیره</button>
+    </div>`;
+  });
+  usersHtml += `</div>`;
+  box.innerHTML += usersHtml;
+}
+
+
+/* ====================== شروع ====================== */
+function submitPred(id){
+  const h = document.getElementById("h_"+id).value;
+  const a = document.getElementById("a_"+id).value;
+  if(h==="" || a===""){ alert("هر دو امتیاز رو وارد کن"); return; }
+  const d=db();
+  const u=d.users[current];
+  const m=d.matches.find(x=>x.id===id);
+  if(!isPredictionOpen(m)){ alert("مهلت پیش‌بینی تمام شده"); return; }
+  if(u.predictions[id]){ alert("قبلاً ثبت کردی"); return; }
+  u.predictions[id] = { h:+h, a:+a };
+  save(d);
+  renderMatches();
+  refreshUI();
+}
+
+const PRIZE_TEXT = "۴۰۰ هزار تومن";
+
+function setResult(id){
+  const h = document.getElementById("rh_"+id).value;
+  const a = document.getElementById("ra_"+id).value;
+  if(h==="" || a===""){ alert("نتیجه رو کامل وارد کن"); return; }
+  const d=db();
+  const m=d.matches.find(x=>x.id===id);
+  m.result = { h:+h, a:+a };
+  checkSoloPrize(d, m);   // بررسی برنده‌ی تک‌نفره
+  save(d);
+  alert("نتیجه ثبت شد ✅");
+  renderAdmin();
+  renderLeaderboard();
+  refreshUI();
+}
+
+// فقط اگر دقیقاً یک نفر نتیجه‌ی دقیق رو زده باشه، جایزه ثبت میشه
+function checkSoloPrize(d, m){
+  if(m.prizeDone) return;          // برای هر بازی فقط یک بار
+  if(!m.result) return;
+  m.prizeDone = true;
+
+  const exactUsers = Object.values(d.users).filter(u=>{
+    if(u.email===ADMIN_EMAIL) return false;
+    const p=u.predictions[m.id];
+    return p && calcPoints(p, m.result)===10;
+  });
+
+  if(exactUsers.length!==1) return;   // بیش از یک نفر یا هیچ‌کس → جایزه نه
+
+  const winner = exactUsers[0];
+  winner.soloExactWins = (winner.soloExactWins||0)+1;
+  winner.pendingPrize = {
+    match: `${m.home} - ${m.away}`,
+    score: `${m.result.h}-${m.result.a}`
+  };
+
+  if(!d.announcements) d.announcements=[];
+  d.announcements.push({
+    id: "ann_"+m.id+"_"+Date.now(),
+    winnerEmail: winner.email,
+    winnerName: winner.name,
+    match: `${m.home} - ${m.away}`
+  });
+}
+
+// نمایش پاپ‌آپ‌ها (فقط یک بار برای هر کاربر)
+function checkNotifications(){
+  if(!current) return;
+  const d=db();
+  const u=d.users[current];
+  if(!u) return;
+
+  // ۱) جایزه‌ی شخصی برنده
+  if(u.pendingPrize){
+    const pr=u.pendingPrize;
+    showPrize("🎉 تبریک!",
+      `شما تنها کسی بودید که نتیجه‌ی دقیق بازی <b>${pr.match}</b> (${pr.score}) را حدس زدید!<br><br>شما برنده‌ی جایزه‌ی <b>${PRIZE_TEXT}</b> شدید 🏆`);
+    delete u.pendingPrize;
+    save(d);
+    return;   // در هر بار فقط یک پاپ‌آپ
+  }
+
+  // ۲) اعلان عمومی برای بقیه
+  if(!u.seenAnnouncements) u.seenAnnouncements=[];
+  const anns=d.announcements||[];
+  const unseen=anns.filter(a=> !u.seenAnnouncements.includes(a.id) && a.winnerEmail!==current);
+  if(unseen.length){
+    const lines=unseen.map(a=>
+      `🏆 کاربر <b>${a.winnerName}</b> با حدس دقیق نتیجه‌ی بازی <b>${a.match}</b> برنده‌ی جایزه‌ی <b>${PRIZE_TEXT}</b> شد!`
+    ).join("<br><br>");
+    showPrize("📢 اعلان", lines);
+    unseen.forEach(a=> u.seenAnnouncements.push(a.id));
+    save(d);
+  }
+}
+
+function showPrize(title, html){
+  document.getElementById("prizeTitle").innerHTML=title;
+  document.getElementById("prizeText").innerHTML=html;
+  document.getElementById("prizeModal").classList.remove("hidden");
+}
+function closePrizeModal(){
+  document.getElementById("prizeModal").classList.add("hidden");
+  checkNotifications();   // اگر اعلان دیگری مانده، نشان بده
+}
+
+
+function addMatch(){
+  const home = document.getElementById("new_home").value.trim();
+  const hc   = document.getElementById("new_hc").value.trim().toLowerCase();
+  const away = document.getElementById("new_away").value.trim();
+  const ac   = document.getElementById("new_ac").value.trim().toLowerCase();
+  const date = document.getElementById("new_date").value.trim();
+  const time = document.getElementById("new_time").value.trim();
+  if(!home || !away){ alert("نام هر دو تیم الزامیه"); return; }
+  if(!date){ alert("تاریخ بازی رو وارد کن"); return; }
+  const d=db();
+  const maxId = d.matches.reduce((mx,m)=>Math.max(mx,m.id),0);
+  d.matches.push({ id:maxId+1, date, time, home, hc, away, ac });
+  save(d);
+  alert("بازی اضافه شد ✅");
+  renderAdmin();
+  renderMatches();
+}
+
+function deleteMatch(id){
+  if(!confirm("مطمئنی می‌خوای این بازی رو حذف کنی؟")) return;
+  const d=db();
+  d.matches = d.matches.filter(m=>m.id!==id);
+  // حذف پیش‌بینی‌های مربوطه
+  Object.values(d.users).forEach(u=>{ delete u.predictions[id]; });
+  save(d);
+  renderAdmin();
+  renderMatches();
+  renderLeaderboard();
+  refreshUI();
+}
+
+function saveBonus(key){
+  const d=db();
+  const inp = document.getElementById("bonus_"+key);
+  if(!inp){ alert("فیلد پیدا نشد: "+key); return; }
+  const val = parseInt(inp.value)||0;
+  const u = d.users[key];
+  if(!u){ alert("کاربر پیدا نشد: "+key); return; }
+  u.bonus = val;
+  save(d);
+  alert("امتیاز ذخیره شد ✅");
+  renderAdmin();
+  renderLeaderboard();
+  refreshUI();
+}
+
+refreshUI();
+renderMatches();
+checkNotifications();
+</script>
+</body>
+</html>
