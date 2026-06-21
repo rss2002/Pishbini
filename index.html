@@ -497,16 +497,38 @@ firebase.initializeApp(firebaseConfig);
 const fbRef = firebase.database().ref("wc_db");
 
 // نسخه‌ی در حافظه از کل دیتابیس
-let DATA = { users:{}, matches: DEFAULT_MATCHES };
+let DATA;
+try {
+  const cached = localStorage.getItem("wc_data");
+  DATA = cached ? JSON.parse(cached) : { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
+} catch(e) {
+  DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
+}
+if(!DATA.users)         DATA.users   = {};
+if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+if(!DATA.announcements) DATA.announcements = [];
 
 function db(){
-  if(!DATA.users)   DATA.users   = {};
-  if(!DATA.matches) DATA.matches = DEFAULT_MATCHES;
+  if(!DATA.users)         DATA.users   = {};
+  if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+  if(!DATA.announcements) DATA.announcements = [];
   return DATA;
 }
+
 function save(d){
   DATA = d;
-  fbRef.set(d);   // نوشتن روی سرور مشترک
+  // همیشه محلی ذخیره کن (حتی اگه Firebase قطع باشه)
+  try {
+    localStorage.setItem("wc_data", JSON.stringify(d));
+  } catch(e) {
+    console.warn("localStorage save failed:", e);
+  }
+  // تلاش برای sync با سرور مشترک
+  try {
+    fbRef.set(d);
+  } catch(e) {
+    console.warn("Firebase sync failed (offline?):", e);
+  }
 }
 
 let current = localStorage.getItem("wc_current") || null;
@@ -518,14 +540,34 @@ fbRef.on("value", snap=>{
   const val = snap.val();
   if(val){
     DATA = val;
-    if(!DATA.users)   DATA.users   = {};
-    if(!DATA.matches) DATA.matches = DEFAULT_MATCHES;
+    if(!DATA.users)         DATA.users   = {};
+    if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
     if(!DATA.announcements) DATA.announcements = [];
+    // localStorage رو همیشه با آخرین نسخه سرور آپدیت کن
+    try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
   } else {
-    DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
-    fbRef.set(DATA);
+    // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
+    let local = null;
+    try {
+      const cached = localStorage.getItem("wc_data");
+      local = cached ? JSON.parse(cached) : null;
+    } catch(e){ local = null; }
+
+    if(local && local.users && Object.keys(local.users).length > 0){
+      // دیتای محلی داریم → برش گردون به Firebase
+      DATA = local;
+      if(!DATA.users)         DATA.users   = {};
+      if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+      if(!DATA.announcements) DATA.announcements = [];
+      try { fbRef.set(DATA); } catch(e){}
+    } else {
+      // هیچ جا دیتا نیست → از صفر بساز
+      DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
+      try { fbRef.set(DATA); } catch(e){}
+      try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+    }
   }
-  
+
   // دوباره رندر کن تا تغییرات زنده دیده بشن
   refreshUI();
   if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
