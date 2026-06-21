@@ -516,6 +516,59 @@ if(!DATA.users)         DATA.users   = {};
 if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
 if(!DATA.announcements) DATA.announcements = [];
 
+/* ====================== سازگاری کلید Firebase ====================== */
+// Firebase توی کلیدها این کاراکترها رو قبول نمی‌کنه: . # $ / [ ]
+// ایمیل‌ها @ و . دارن، پس فقط موقع رفت‌وآمد با Firebase کلید users رو encode/decode می‌کنیم.
+function encodeEmailKey(email){
+  return email
+    .replace(/\./g, "_DOT_")
+    .replace(/@/g,  "_AT_")
+    .replace(/#/g,  "_HASH_")
+    .replace(/\$/g, "_DOLLAR_")
+    .replace(/\//g, "_SLASH_")
+    .replace(/\[/g, "_LB_")
+    .replace(/\]/g, "_RB_");
+}
+function decodeEmailKey(key){
+  return key
+    .replace(/_DOT_/g,    ".")
+    .replace(/_AT_/g,     "@")
+    .replace(/_HASH_/g,   "#")
+    .replace(/_DOLLAR_/g, "$")
+    .replace(/_SLASH_/g,  "/")
+    .replace(/_LB_/g,     "[")
+    .replace(/_RB_/g,     "]");
+}
+
+// نسخه‌ای از دیتا که کلیدهای users برای Firebase امن شدن
+function encodeForFirebase(d){
+  const out = {
+    matches:       d.matches       || DEFAULT_MATCHES,
+    announcements: d.announcements  || [],
+    users: {}
+  };
+  const users = d.users || {};
+  for(const rawEmail in users){
+    out.users[encodeEmailKey(rawEmail)] = users[rawEmail];
+  }
+  return out;
+}
+
+// دیتایی که از Firebase اومده، کلیدهای users رو به ایمیل خام برمی‌گردونیم
+function decodeFromFirebase(val){
+  const out = {
+    matches:       val.matches       || DEFAULT_MATCHES,
+    announcements: val.announcements  || [],
+    users: {}
+  };
+  const users = val.users || {};
+  for(const encKey in users){
+    out.users[decodeEmailKey(encKey)] = users[encKey];
+  }
+  return out;
+}
+
+
 function db(){
   if(!DATA.users)         DATA.users   = {};
   if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
@@ -525,21 +578,20 @@ function db(){
 
 function save(d){
   DATA = d;
-  // همیشه محلی ذخیره کن (حتی اگه Firebase قطع باشه)
+  // همیشه محلی ذخیره کن (با ایمیل خام، چون localStorage محدودیت کلید نداره)
   try {
     localStorage.setItem("wc_data", JSON.stringify(d));
   } catch(e) {
     console.warn("localStorage save failed:", e);
   }
-  // تلاش برای sync با سرور مشترک
-  if(fbRef) {
-    try {
-      fbRef.set(d);
-    } catch(e) {
-      console.warn("Firebase sync failed (offline?):", e);
-    }
+  // تلاش برای sync با سرور مشترک — کلیدهای ایمیل رو encode می‌کنیم
+  try {
+    fbRef.set(encodeForFirebase(d));
+  } catch(e) {
+    console.warn("Firebase sync failed (offline?):", e);
   }
 }
+
 
 let current = localStorage.getItem("wc_current") || null;
 let isAuthenticating = false;
@@ -549,102 +601,45 @@ let authMode = "login"; // login | register
 if(fbRef) {
   try {
     fbRef.on("value", snap=>{
-  console.log("🔥 Firebase listener fired");
-  console.log("📌 current before sync:", current);
-  console.log("📌 localStorage.wc_current:", localStorage.getItem("wc_current"));
-  
-  const val = snap.val();
-  console.log("📦 Firebase snapshot val:", val);
-  console.log("📦 snapshot has users?", val && val.users ? Object.keys(val.users) : "NO USERS");
-  
-  // ذخیره کاربر فعلی قبل از sync
-  const previousCurrent = current;
-  const previousUserData = (previousCurrent && DATA.users && DATA.users[previousCurrent]) 
-                           ? DATA.users[previousCurrent] 
-                           : null;
-  
-  console.log("💾 Previous current user:", previousCurrent);
-  console.log("💾 Previous user data exists?", !!previousUserData);
+  const raw = snap.val();
+  const val = raw ? decodeFromFirebase(raw) : null;   // ← decode موقع خوندن
 
   if(val){
     DATA = val;
     if(!DATA.users)         DATA.users   = {};
     if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
     if(!DATA.announcements) DATA.announcements = [];
-    
-    console.log("✅ After sync, DATA.users keys:", Object.keys(DATA.users));
-    console.log("🔍 Does DATA.users have current user?", previousCurrent, "→", !!DATA.users[previousCurrent]);
-    
-    // اگه کاربر فعلی از Firebase گم شده، اما قبلاً داشتیمش، برش گردون
-    if(previousCurrent && !DATA.users[previousCurrent] && previousUserData){
-      console.warn("⚠️ RESTORING MISSING USER:", previousCurrent);
-      DATA.users[previousCurrent] = previousUserData;
-      // دوباره Firebase رو هم آپدیت کن
-      try { 
-        fbRef.set(DATA);
-        console.log("✅ Firebase updated with restored user");
-      } catch(e){
-        console.error("❌ Failed to restore user to Firebase:", e);
-      }
-    }
-    
-    // localStorage رو همیشه با آخرین نسخه سرور آپدیت کن
-    try { 
-      localStorage.setItem("wc_data", JSON.stringify(DATA));
-      console.log("💾 localStorage updated");
-    } catch(e){
-      console.error("❌ localStorage update failed:", e);
-    }
+    try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
   } else {
-    console.log("⚠️ Firebase snapshot is NULL");
     // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
     let local = null;
     try {
       const cached = localStorage.getItem("wc_data");
       local = cached ? JSON.parse(cached) : null;
-      console.log("💾 localStorage has data?", !!local, local && local.users ? Object.keys(local.users) : "NO USERS");
-    } catch(e){ 
-      console.error("❌ localStorage parse failed:", e);
-      local = null; 
-    }
+    } catch(e){ local = null; }
 
     if(local && local.users && Object.keys(local.users).length > 0){
-      // دیتای محلی داریم → برش گردون به Firebase
-      console.log("✅ Restoring from localStorage to Firebase");
       DATA = local;
       if(!DATA.users)         DATA.users   = {};
       if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
       if(!DATA.announcements) DATA.announcements = [];
-      try { 
-        fbRef.set(DATA);
-        console.log("✅ Firebase restored from localStorage");
-      } catch(e){
-        console.error("❌ Firebase restore failed:", e);
-      }
+      try { fbRef.set(encodeForFirebase(DATA)); } catch(e){}   // ← encode موقع نوشتن
     } else {
-      // هیچ جا دیتا نیست → از صفر بساز
-      console.log("⚠️ NO DATA ANYWHERE - creating fresh DB");
       DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
-      try { fbRef.set(DATA); } catch(e){}
+      try { fbRef.set(encodeForFirebase(DATA)); } catch(e){}   // ← encode موقع نوشتن
       try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
     }
   }
 
-  console.log("🎯 Final DATA.users keys:", Object.keys(DATA.users));
-  console.log("🎯 Final current:", current);
-  console.log("🎯 Final isAdmin():", isAdmin());
-
-  // دوباره رندر کن تا تغییرات زنده دیده بشن
   refreshUI();
   if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
   if(!document.getElementById("view-leaderboard").classList.contains("hidden")) renderLeaderboard();
   if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
+  if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
   if(!document.getElementById("view-admin").classList.contains("hidden"))        renderAdmin();
   checkNotifications();
-  
-  console.log("✅ Firebase listener completed");
-  console.log("═════════════════════════════════════");
 });
+
 
   } catch(e) {
     console.warn("⚠️ Firebase listener failed:", e);
