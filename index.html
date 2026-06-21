@@ -213,9 +213,9 @@ input[type="time"] { color:#000; }
   <!-- AUTH -->
   <div id="auth" class="card">
     <h2 id="authTitle" style="color:#ffd700;margin-bottom:14px;">ورود</h2>
-    <div class="field" id="nameField" style="display:none;">
-      <label>نام نمایشی</label>
-      <input id="authName" placeholder="مثلاً علی">
+        <div class="field" id="nameField" style="display:none;">
+      <label>نام</label>
+      <input id="authName" type="text" placeholder="نام شما">
     </div>
     <div class="field">
       <label>ایمیل</label>
@@ -573,6 +573,7 @@ function toggleAuthMode(){
   document.getElementById("nameField").style.display = reg?"block":"none";
   document.getElementById("authSwitchText").textContent = reg?"حساب داری؟":"حساب نداری؟";
   document.getElementById("authSwitchLink").textContent = reg?"وارد شو":"ثبت‌نام کن";
+  document.getElementById("nameField").style.display = reg ? "block" : "none";
   msg("authMsg","");
 }
 function msg(id,text,ok){
