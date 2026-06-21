@@ -188,6 +188,8 @@ input[type="time"] { color:#000; }
 .lb-name:hover{color:#ffd700;}
 
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 </head>
 <body>
@@ -482,41 +484,55 @@ setInterval(updateTimers, 1000);
 updateTimers();
 
 /* ====================== ذخیره‌سازی ====================== */
+/* ====================== ذخیره‌سازی (Firebase) ====================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyC2qVdIHgxLY1ojHnf2rnfBcB1Fv5ikfao",
+  authDomain: "worldcup-37831.firebaseapp.com",
+  databaseURL: "https://worldcup-37831-default-rtdb.firebaseio.com",
+  projectId: "worldcup-37831",
+  storageBucket: "worldcup-37831.firebasestorage.app",
+  messagingSenderId: "509539615365",
+  appId: "1:509539615365:web:4c0b990b3e0b94f620dfec"
+};
+firebase.initializeApp(firebaseConfig);
+const fbRef = firebase.database().ref("wc_db");
+
+// نسخه‌ی در حافظه از کل دیتابیس
+let DATA = { users:{}, matches: DEFAULT_MATCHES };
+
 function db(){
-  let d = JSON.parse(localStorage.getItem("wc_db") || "null");
-  if(!d){
-    d = { users:{}, matches: DEFAULT_MATCHES };
-    localStorage.setItem("wc_db", JSON.stringify(d));
-  }
-  if(!d.matches) d.matches = DEFAULT_MATCHES;
-  return d;
+  if(!DATA.users)   DATA.users   = {};
+  if(!DATA.matches) DATA.matches = DEFAULT_MATCHES;
+  return DATA;
 }
-function save(d){ localStorage.setItem("wc_db", JSON.stringify(d)); }
+function save(d){
+  DATA = d;
+  fbRef.set(d);   // نوشتن روی سرور مشترک
+}
 
 let current = localStorage.getItem("wc_current") || null;
 let authMode = "login"; // login | register
 
-/* ====================== امتیازدهی ====================== */
-function calcPoints(pred, result){
-  const ph=+pred.h, pa=+pred.a, rh=+result.h, ra=+result.a;
-  if(ph===rh && pa===ra) return 10;                 // نتیجه دقیق
-  const predW = Math.sign(ph-pa);                    // برنده پیش‌بینی
-  const realW = Math.sign(rh-ra);                    // برنده واقعی
-  if(predW===realW){
-    if((ph-pa)===(rh-ra)) return 8;                  // برنده + تفاضل
-    return 5;                                        // فقط برنده
+// گوش دادن به تغییرات آنلاین: هر کسی چیزی عوض کنه، برای همه آپدیت می‌شه
+fbRef.on("value", snap=>{
+  const val = snap.val();
+  if(val){
+    DATA = val;
+    if(!DATA.users)   DATA.users   = {};
+    if(!DATA.matches) DATA.matches = DEFAULT_MATCHES;
+  } else {
+    DATA = { users:{}, matches: DEFAULT_MATCHES };
+    fbRef.set(DATA);
   }
-  return 1;                                           // اشتباه
-}
+  // دوباره رندر کن تا تغییرات زنده دیده بشن
+  refreshUI();
+  if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
+  if(!document.getElementById("view-leaderboard").classList.contains("hidden")) renderLeaderboard();
+  if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
+  if(!document.getElementById("view-admin").classList.contains("hidden"))        renderAdmin();
+  checkNotifications();
+});
 
-function userTotal(u){
-  const d=db(); let t=0;
-  d.matches.forEach(m=>{
-    const p=u.predictions[m.id];
-    if(p && m.result) t+=calcPoints(p,m.result);
-  });
-  return t + (u.bonus||0);
-}
 
 /* ====================== احراز هویت ====================== */
 function toggleAuthMode(){
@@ -965,9 +981,7 @@ function saveBonus(key){
   refreshUI();
 }
 
-refreshUI();
-renderMatches();
-checkNotifications();
+
 </script>
 </body>
 </html>
