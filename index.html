@@ -581,18 +581,20 @@ function msg(id,text,ok){
 }
 async function doAuth(){
   const d = db();
-  isAuthenticating = true; // ← اضافه شد
+  isAuthenticating = true;
   
   if(authMode==="register"){
-    const name  = document.getElementById("regName").value.trim();
-    const email = document.getElementById("regEmail").value.trim();
-    const pass  = document.getElementById("regPass").value.trim();
+    // از همون فیلدهای مشترک HTML استفاده می‌کنیم
+    const name  = document.getElementById("authName").value.trim();
+    const email = document.getElementById("authEmail").value.trim();
+    const pass  = document.getElementById("authPass").value.trim();
+    
     if(!name || !email || !pass) {
-      isAuthenticating = false; // ← اضافه شد
+      isAuthenticating = false;
       return msg("authMsg","لطفاً تمام فیلدها رو پر کنید");
     }
     if(d.users[email]) {
-      isAuthenticating = false; // ← اضافه شد
+      isAuthenticating = false;
       return msg("authMsg","این ایمیل قبلاً ثبت شده");
     }
     
@@ -605,23 +607,25 @@ async function doAuth(){
     msg("authMsg","ثبت‌نام موفق بود ✅", true);
     
     setTimeout(()=>{
-      isAuthenticating = false; // ← اضافه شد
+      isAuthenticating = false;
       refreshUI();
       renderMatches();
       checkNotifications();
-    }, 500); // ← تغییر از 300 به 500
+    }, 500);
   }
   else {
-    const email = document.getElementById("loginEmail").value.trim();
-    const pass  = document.getElementById("loginPass").value.trim();
+    // login هم از همون فیلدها استفاده می‌کنه
+    const email = document.getElementById("authEmail").value.trim();
+    const pass  = document.getElementById("authPass").value.trim();
+    
     if(!email || !pass) {
-      isAuthenticating = false; // ← اضافه شد
+      isAuthenticating = false;
       return msg("authMsg","لطفاً ایمیل و رمز رو وارد کنید");
     }
     
     const u = d.users[email];
     if(!u || u.pass !== pass) {
-      isAuthenticating = false; // ← اضافه شد
+      isAuthenticating = false;
       return msg("authMsg","ایمیل یا رمز اشتباه است");
     }
     
@@ -630,13 +634,14 @@ async function doAuth(){
     msg("authMsg","ورود موفق ✅", true);
     
     setTimeout(()=>{
-      isAuthenticating = false; // ← اضافه شد
+      isAuthenticating = false;
       refreshUI();
       renderMatches();
       checkNotifications();
-    }, 500); // ← تغییر از 300 به 500
+    }, 500);
   }
 }
+
 
 
 
