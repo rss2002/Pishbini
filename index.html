@@ -519,10 +519,12 @@ fbRef.on("value", snap=>{
     DATA = val;
     if(!DATA.users)   DATA.users   = {};
     if(!DATA.matches) DATA.matches = DEFAULT_MATCHES;
+    if(!DATA.announcements) DATA.announcements = [];
   } else {
-    DATA = { users:{}, matches: DEFAULT_MATCHES };
+    DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
     fbRef.set(DATA);
   }
+  
   // دوباره رندر کن تا تغییرات زنده دیده بشن
   refreshUI();
   if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
@@ -531,6 +533,7 @@ fbRef.on("value", snap=>{
   if(!document.getElementById("view-admin").classList.contains("hidden"))        renderAdmin();
   checkNotifications();
 });
+
 
 /* ====================== امتیازدهی ====================== */
 function calcPoints(pred, result){
@@ -576,39 +579,48 @@ function msg(id,text,ok){
   e.textContent=text; e.className="msg "+(ok?"ok":"err");
 }
 async function doAuth(){
-  const email=document.getElementById("authEmail").value.trim().toLowerCase();
-  const pass =document.getElementById("authPass").value;
-  if(!email || !pass){ msg("authMsg","ایمیل و رمز را وارد کن"); return; }
-  const d=db();
+  const d = db();
   if(authMode==="register"){
-    const name=document.getElementById("authName").value.trim();
-    if(!name){ msg("authMsg","نام را وارد کن"); return; }
-    if(d.users[email]){ msg("authMsg","این ایمیل قبلاً ثبت شده"); return; }
-    d.users[email]={ name, email, pass, predictions:{} };
+    const name  = document.getElementById("regName").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const pass  = document.getElementById("regPass").value.trim();
+    if(!name || !email || !pass) return msg("authMsg","لطفاً تمام فیلدها رو پر کنید");
+    if(d.users[email]) return msg("authMsg","این ایمیل قبلاً ثبت شده");
+    
+    d.users[email] = { name, email, pass, predictions:{}, seenAnnouncements:[] };
     save(d);
-    current=email; localStorage.setItem("wc_current",email);
-    msg("authMsg","ثبت‌نام موفق بود ✅",true);
-    await afterLogin();
-  } else {
-    const u=d.users[email];
-    if(!u || u.pass!==pass){ msg("authMsg","ایمیل یا رمز اشتباه است"); return; }
-    current=email; localStorage.setItem("wc_current",email);
-    await afterLogin();
+    
+    current = email;
+    localStorage.setItem("wc_current", email);
+    msg("authMsg","ثبت‌نام موفق بود ✅", true);
+    
+    // حذف await، چون refreshUI از طریق listener صدا زده میشه
+    setTimeout(()=>{
+      refreshUI();
+      renderMatches();
+      checkNotifications();
+    }, 300);
+  }
+  else {
+    const email = document.getElementById("loginEmail").value.trim();
+    const pass  = document.getElementById("loginPass").value.trim();
+    if(!email || !pass) return msg("authMsg","لطفاً ایمیل و رمز رو وارد کنید");
+    
+    const u = d.users[email];
+    if(!u || u.pass !== pass) return msg("authMsg","ایمیل یا رمز اشتباه است");
+    
+    current = email;
+    localStorage.setItem("wc_current", email);
+    msg("authMsg","ورود موفق ✅", true);
+    
+    setTimeout(()=>{
+      refreshUI();
+      renderMatches();
+      checkNotifications();
+    }, 300);
   }
 }
-function logout(){
-  current=null; localStorage.removeItem("wc_current");
-  refreshUI(); showTab("matches");
-}
-function isAdmin(){ return current===ADMIN_EMAIL; }
 
-/* ====================== UI ====================== */
-async function afterLogin(){ 
-  await new Promise(r => setTimeout(r, 500)); 
-  refreshUI(); 
-  renderMatches(); 
-  checkNotifications(); 
-}
 
  
 
@@ -616,25 +628,33 @@ async function afterLogin(){
 
 function refreshUI(){
   const d = db();
-  const logged=!!current;
+  const logged = !!current;
 
-  // ◀️ اصلاح: اگر current هست ولی کاربر توی دیتابیس نیست، لاگ‌اوت کن
-  if(logged && !db().users[current]){
+  // فقط یک بار چک می‌کنیم، بدون تکرار
+  if(logged && !d.users[current]){
     current = null;
     localStorage.removeItem("wc_current");
+    // بعد از logout، دوباره UI رو تنظیم کن
+    document.getElementById("auth").classList.remove("hidden");
+    document.getElementById("userBar").classList.add("hidden");
+    document.getElementById("needLogin").style.display = "block";
+    document.getElementById("tab-admin").classList.add("hidden");
+    return;
   }
 
-  const isLogged = !!current;
-  document.getElementById("auth").classList.toggle("hidden", isLogged);
-  document.getElementById("userBar").classList.toggle("hidden", !isLogged);
-  document.getElementById("needLogin").style.display = isLogged ? "none" : "block";
+  document.getElementById("auth").classList.toggle("hidden", logged);
+  document.getElementById("userBar").classList.toggle("hidden", !logged);
+  document.getElementById("needLogin").style.display = logged ? "none" : "block";
   document.getElementById("tab-admin").classList.toggle("hidden", !isAdmin());
-  if(isLogged){
-    const u = db().users[current];
+  
+  if(logged){
+    const u = d.users[current];
     document.getElementById("userName").textContent = u.name;
     document.getElementById("userScore").textContent = userTotal(u);
   }
 }
+
+
 
 function showTab(name){
   ["matches","leaderboard","profile","admin"].forEach(t=>{
