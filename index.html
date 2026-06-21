@@ -1118,6 +1118,30 @@ function saveBonus(key){
   refreshUI();
 }
 
+function logout(){
+  current = null;
+  isAuthenticating = false;
+  authMode = "login";
+  localStorage.removeItem("wc_current");
+
+  // فرم ورود رو پاک کن
+  const n = document.getElementById("authName");
+  const e = document.getElementById("authEmail");
+  const p = document.getElementById("authPass");
+  if(n) n.value = "";
+  if(e) e.value = "";
+  if(p) p.value = "";
+
+  // UI رو به حالت خارج‌شده برگردون
+  document.getElementById("auth").classList.remove("hidden");
+  document.getElementById("userBar").classList.add("hidden");
+  document.getElementById("needLogin").style.display = "block";
+  document.getElementById("tab-admin").classList.add("hidden");
+
+  refreshUI();
+}
+
+
 
 </script>
 </body>
