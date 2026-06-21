@@ -493,8 +493,16 @@ const firebaseConfig = {
   messagingSenderId: "509539615365",
   appId: "1:509539615365:web:4c0b990b3e0b94f620dfec"
 };
-firebase.initializeApp(firebaseConfig);
-const fbRef = firebase.database().ref("wc_db");
+
+let fbRef = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  fbRef = firebase.database().ref("wc_db");
+  console.log("✅ Firebase initialized successfully");
+} catch(e) {
+  console.warn("⚠️ Firebase init failed (offline or blocked):", e);
+  console.warn("📌 App will run in localStorage-only mode");
+}
 
 // نسخه‌ی در حافظه از کل دیتابیس
 let DATA;
@@ -524,10 +532,12 @@ function save(d){
     console.warn("localStorage save failed:", e);
   }
   // تلاش برای sync با سرور مشترک
-  try {
-    fbRef.set(d);
-  } catch(e) {
-    console.warn("Firebase sync failed (offline?):", e);
+  if(fbRef) {
+    try {
+      fbRef.set(d);
+    } catch(e) {
+      console.warn("Firebase sync failed (offline?):", e);
+    }
   }
 }
 
@@ -536,46 +546,53 @@ let isAuthenticating = false;
 let authMode = "login"; // login | register
 
 // گوش دادن به تغییرات آنلاین: هر کسی چیزی عوض کنه، برای همه آپدیت می‌شه
-fbRef.on("value", snap=>{
-  const val = snap.val();
-  if(val){
-    DATA = val;
-    if(!DATA.users)         DATA.users   = {};
-    if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-    if(!DATA.announcements) DATA.announcements = [];
-    // localStorage رو همیشه با آخرین نسخه سرور آپدیت کن
-    try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
-  } else {
-    // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
-    let local = null;
-    try {
-      const cached = localStorage.getItem("wc_data");
-      local = cached ? JSON.parse(cached) : null;
-    } catch(e){ local = null; }
+if(fbRef) {
+  try {
+    fbRef.on("value", snap=>{
+      const val = snap.val();
+      if(val){
+        DATA = val;
+        if(!DATA.users)         DATA.users   = {};
+        if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+        if(!DATA.announcements) DATA.announcements = [];
+        // localStorage رو همیشه با آخرین نسخه سرور آپدیت کن
+        try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+      } else {
+        // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
+        let local = null;
+        try {
+          const cached = localStorage.getItem("wc_data");
+          local = cached ? JSON.parse(cached) : null;
+        } catch(e){ local = null; }
 
-    if(local && local.users && Object.keys(local.users).length > 0){
-      // دیتای محلی داریم → برش گردون به Firebase
-      DATA = local;
-      if(!DATA.users)         DATA.users   = {};
-      if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-      if(!DATA.announcements) DATA.announcements = [];
-      try { fbRef.set(DATA); } catch(e){}
-    } else {
-      // هیچ جا دیتا نیست → از صفر بساز
-      DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
-      try { fbRef.set(DATA); } catch(e){}
-      try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
-    }
+        if(local && local.users && Object.keys(local.users).length > 0){
+          // دیتای محلی داریم → برش گردون به Firebase
+          DATA = local;
+          if(!DATA.users)         DATA.users   = {};
+          if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+          if(!DATA.announcements) DATA.announcements = [];
+          try { fbRef.set(DATA); } catch(e){}
+        } else {
+          // هیچ جا دیتا نیست → از صفر بساز
+          DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
+          try { fbRef.set(DATA); } catch(e){}
+          try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+        }
+      }
+
+      // دوباره رندر کن تا تغییرات زنده دیده بشن
+      refreshUI();
+      if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
+      if(!document.getElementById("view-leaderboard").classList.contains("hidden")) renderLeaderboard();
+      if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
+      if(!document.getElementById("view-admin").classList.contains("hidden"))        renderAdmin();
+      checkNotifications();
+    });
+  } catch(e) {
+    console.warn("⚠️ Firebase listener failed:", e);
   }
+}
 
-  // دوباره رندر کن تا تغییرات زنده دیده بشن
-  refreshUI();
-  if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
-  if(!document.getElementById("view-leaderboard").classList.contains("hidden")) renderLeaderboard();
-  if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
-  if(!document.getElementById("view-admin").classList.contains("hidden"))        renderAdmin();
-  checkNotifications();
-});
 
 
 /* ====================== امتیازدهی ====================== */
