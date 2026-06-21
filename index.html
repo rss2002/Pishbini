@@ -606,17 +606,17 @@ function isAdmin(){ return current===ADMIN_EMAIL; }
 
 /* ====================== UI ====================== */
 async function afterLogin(){ 
-  await new Promise(r => setTimeout(r, 300)); 
-  refreshUI(); renderMatches(); checkNotifications(); 
+  await new Promise(r => setTimeout(r, 500)); 
+  refreshUI(); 
+  renderMatches(); 
+  checkNotifications(); 
 }
+ 
+
 
 
 function refreshUI(){
   const d = db();
-if(current && !d.users[current]){
-  current = null;
-  localStorage.removeItem("wc_current");
-}
   const logged=!!current;
 
   // ◀️ اصلاح: اگر current هست ولی کاربر توی دیتابیس نیست، لاگ‌اوت کن
