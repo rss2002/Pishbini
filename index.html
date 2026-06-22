@@ -625,6 +625,7 @@ if(fbRef) {
     if(!DATA.users)         DATA.users   = {};
     if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
     if(!DATA.announcements) DATA.announcements = [];
+      ensureAdmin(); 
     try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
   } else {
     // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
@@ -646,15 +647,7 @@ if(fbRef) {
       try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
     }
   }
-  if(val){
-  DATA = val;
-  if(!DATA.users)         DATA.users   = {};
-  if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-  if(!DATA.announcements) DATA.announcements = [];
-  ensureAdmin();          // ← اضافه کن: ادمین همیشه بماند
-  try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
-}
-
+  
 
   refreshUI();
   if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
