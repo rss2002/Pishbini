@@ -620,33 +620,26 @@ if(fbRef) {
   const raw = snap.val();
   const val = raw ? decodeFromFirebase(raw) : null;   // ← decode موقع خوندن
 
-  if(val){
+ if(val){
   DATA = val;
-  if(!DATA.users)         DATA.users   = {};
-  if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+  if(!DATA.users) DATA.users = {};
+  
+  // ✅ ادمین رو همیشه force کن
+  if(!DATA.users[ADMIN_EMAIL]){
+    DATA.users[ADMIN_EMAIL] = {
+      name: "Admin",
+      email: ADMIN_EMAIL,
+      pass: "adminpass",
+      predictions: {},
+      seenAnnouncements: []
+    };
+  }
+  
+  if(!DATA.matches) DATA.matches = DEFAULT_MATCHES;
   if(!DATA.announcements) DATA.announcements = [];
-  ensureAdmin();          // ← اضافه کن: ادمین همیشه بماند
   try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
 }
-    // Firebase خالیه. اول ببین تو localStorage دیتا داریم؟
-    let local = null;
-    try {
-      const cached = localStorage.getItem("wc_data");
-      local = cached ? JSON.parse(cached) : null;
-    } catch(e){ local = null; }
 
-    if(local && local.users && Object.keys(local.users).length > 0){
-      DATA = local;
-      if(!DATA.users)         DATA.users   = {};
-      if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-      if(!DATA.announcements) DATA.announcements = [];
-      try { fbRef.set(encodeForFirebase(DATA)); } catch(e){}   // ← encode موقع نوشتن
-    } else {
-      DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
-      try { fbRef.set(encodeForFirebase(DATA)); } catch(e){}   // ← encode موقع نوشتن
-      try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
-    }
-  }
   
 
   refreshUI();
