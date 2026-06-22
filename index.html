@@ -710,12 +710,12 @@ async function doAuth(){
       setAuthMsg("همه فیلدها را پر کن");
       isAuthenticating = false; return;
     }
-    if(d.users[emailKey]){ // ← تغییر
+    if(d.users[emailKey]){ // ← تغییر از email به emailKey
       setAuthMsg("این ایمیل قبلا ثبت شده");
       isAuthenticating = false; return;
     }
     d.users[emailKey] = { name, email, pass, predictions:{}, seenAnnouncements:[] }; // ← تغییر
-    current = email;
+    current = email; // ← email خام برای session
     localStorage.setItem("wc_current", email);
     save(d);
     setAuthMsg("ثبت‌نام موفق ✅");
@@ -728,12 +728,12 @@ async function doAuth(){
       setAuthMsg("ایمیل و رمز عبور را وارد کن");
       isAuthenticating = false; return;
     }
-    const u = d.users[emailKey]; // ← تغییر
+    const u = d.users[emailKey]; // ← تغییر از email به emailKey
     if(!u || u.pass !== pass){
       setAuthMsg("ایمیل یا رمز عبور اشتباه است");
       isAuthenticating = false; return;
     }
-    current = email;
+    current = email; // ← email خام برای session
     localStorage.setItem("wc_current", email);
     setAuthMsg("ورود موفق ✅");
     setTimeout(()=>{
