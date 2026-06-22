@@ -569,23 +569,28 @@ function decodeFromFirebase(val){
 }
 
 
-function db(){
- if (!DATA.users) DATA.users = {};
-if (!DATA.users[ADMIN_EMAIL]) {
-  DATA.users[ADMIN_EMAIL] = {
-    name: "Admin",
-    email: ADMIN_EMAIL,
-    pass: "adminpass", // موقت
-    predictions: {},
-    seenAnnouncements: []
-  };
-  save(DATA);
+function ensureAdmin(){
+  if(!DATA.users) DATA.users = {};
+  const key = encodeEmailKey(ADMIN_EMAIL);
+  if(!DATA.users[key]){
+    DATA.users[key] = {
+      name: "Admin",
+      email: ADMIN_EMAIL,
+      pass: "adminpass",
+      predictions: {},
+      seenAnnouncements: []
+    };
+  }
 }
 
+function db(){
+  if(!DATA.users)         DATA.users = {};
   if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
   if(!DATA.announcements) DATA.announcements = [];
+  ensureAdmin();
   return DATA;
 }
+
 
 function save(d){
   DATA = d;
@@ -641,6 +646,15 @@ if(fbRef) {
       try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
     }
   }
+  if(val){
+  DATA = val;
+  if(!DATA.users)         DATA.users   = {};
+  if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+  if(!DATA.announcements) DATA.announcements = [];
+  ensureAdmin();          // ← اضافه کن: ادمین همیشه بماند
+  try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+}
+
 
   refreshUI();
   if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
