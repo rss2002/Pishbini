@@ -519,10 +519,6 @@ if(!DATA.announcements) DATA.announcements = [];
 /* ====================== سازگاری کلید Firebase ====================== */
 // Firebase توی کلیدها این کاراکترها رو قبول نمی‌کنه: . # $ / [ ]
 // ایمیل‌ها @ و . دارن، پس فقط موقع رفت‌وآمد با Firebase کلید users رو encode/decode می‌کنیم.
-// نکته‌ی مهم: DATA.users (نسخه‌ی محلی/حافظه/localStorage) همیشه باید با کلید خام
-// (ایمیل واقعی) نگه‌داری شه. encode فقط لحظه‌ی فرستادن به Firebase انجام می‌شه
-// و decode فقط لحظه‌ی گرفتن از Firebase. در غیر این صورت current/d.users[email]
-// با هم نمی‌خونن و یوزر بعد از رفرش گم می‌شه.
 function encodeEmailKey(email){
   return email
     .replace(/\./g, "_DOT_")
@@ -574,7 +570,18 @@ function decodeFromFirebase(val){
 
 
 function db(){
-  if(!DATA.users)         DATA.users   = {};
+ if (!DATA.users) DATA.users = {};
+if (!DATA.users[ADMIN_EMAIL]) {
+  DATA.users[ADMIN_EMAIL] = {
+    name: "Admin",
+    email: ADMIN_EMAIL,
+    pass: "adminpass", // موقت
+    predictions: {},
+    seenAnnouncements: []
+  };
+  save(DATA);
+}
+
   if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
   if(!DATA.announcements) DATA.announcements = [];
   return DATA;
@@ -706,21 +713,20 @@ async function doAuth(){
   const name  = document.getElementById("authName").value.trim();
   const email = document.getElementById("authEmail").value.trim();
   const pass  = document.getElementById("authPass").value.trim();
-
-  // توجه: اینجا دیگه encode نمی‌کنیم. DATA.users همیشه با کلید خام (ایمیل واقعی)
-  // نگه‌داری می‌شه؛ encode فقط موقع فرستادن به Firebase (در save()) انجام می‌شه.
+  
+  const emailKey = encodeEmailKey(email); // ← اضافه شد
 
   if(authMode === "register"){
     if(!name || !email || !pass){
       setAuthMsg("همه فیلدها را پر کن");
       isAuthenticating = false; return;
     }
-    if(d.users[email]){
+    if(d.users[emailKey]){ // ← تغییر از email به emailKey
       setAuthMsg("این ایمیل قبلا ثبت شده");
       isAuthenticating = false; return;
     }
-    d.users[email] = { name, email, pass, predictions:{}, seenAnnouncements:[] };
-    current = email;
+    d.users[emailKey] = { name, email, pass, predictions:{}, seenAnnouncements:[] }; // ← تغییر
+    current = email; // ← email خام برای session
     localStorage.setItem("wc_current", email);
     save(d);
     setAuthMsg("ثبت‌نام موفق ✅");
@@ -733,12 +739,12 @@ async function doAuth(){
       setAuthMsg("ایمیل و رمز عبور را وارد کن");
       isAuthenticating = false; return;
     }
-    const u = d.users[email];
+    const u = d.users[emailKey]; // ← تغییر از email به emailKey
     if(!u || u.pass !== pass){
       setAuthMsg("ایمیل یا رمز عبور اشتباه است");
       isAuthenticating = false; return;
     }
-    current = email;
+    current = email; // ← email خام برای session
     localStorage.setItem("wc_current", email);
     setAuthMsg("ورود موفق ✅");
     setTimeout(()=>{
@@ -746,10 +752,6 @@ async function doAuth(){
       refreshUI(); renderMatches(); checkNotifications();
     }, 200);
   }
-}
-
-function setAuthMsg(text, ok){
-  msg("authMsg", text, ok);
 }
 
 
