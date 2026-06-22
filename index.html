@@ -701,7 +701,7 @@ function doAuth() {
   const email = document.getElementById("authEmail").value.trim();
   const pass = document.getElementById("authPass").value;
   
-  const emailKey = encodeEmailKey(email); // ← اضافه کن
+  const emailKey = encodeEmailKey(email); // تبدیل ایمیل به فرمت Firebase
   
   if (action === "register") {
     const name = document.getElementById("authName").value.trim();
@@ -709,12 +709,13 @@ function doAuth() {
       alert("لطفاً همه فیلدها را پر کنید");
       return;
     }
-    if (d.users[emailKey]) { // ← تغییر بده
+    if (d.users[emailKey]) { 
       alert("این ایمیل قبلاً ثبت شده است");
       return;
     }
-    d.users[emailKey] = { name, email, password: pass, predictions: {}, seenAnnouncements: [] }; // ← تغییر بده
-    current = email; // همون ایمیل خام رو توی current نگه دار
+    // استفاده از "pass" به جای "password"
+    d.users[emailKey] = { name, email, pass, predictions: {}, seenAnnouncements: [] }; 
+    current = email; 
     localStorage.setItem("wc_current", email);
     save(d);
     setTimeout(() => {
@@ -728,8 +729,8 @@ function doAuth() {
       alert("لطفاً ایمیل و رمز عبور را وارد کنید");
       return;
     }
-    const u = d.users[emailKey]; // ← تغییر بده
-    if (!u || u.password !== pass) { // ← اینجا هم pass → password
+    const u = d.users[emailKey]; 
+    if (!u || u.pass !== pass) { // چک کردن فیلد "pass"
       alert("ایمیل یا رمز عبور اشتباه است");
       return;
     }
@@ -743,6 +744,7 @@ function doAuth() {
     }, 100);
   }
 }
+
 
 
 
