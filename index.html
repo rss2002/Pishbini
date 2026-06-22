@@ -1171,10 +1171,23 @@ function addMatch(){
 function deleteMatch(id){
   if(!confirm("مطمئنی می‌خوای این بازی رو حذف کنی؟")) return;
   const d=db();
+  
+  console.log("🗑 Deleting match:", id);
+  console.log("Before delete - matches count:", d.matches.length);
+  console.log("Before delete - user predictions sample:", Object.keys(d.users)[0], d.users[Object.keys(d.users)[0]].predictions);
+  
   d.matches = d.matches.filter(m=>m.id!==id);
+  
   // حذف پیش‌بینی‌های مربوطه
   Object.values(d.users).forEach(u=>{ delete (u.predictions||{})[id]; });
+  
+  console.log("After delete - matches count:", d.matches.length);
+  console.log("After delete - user predictions sample:", Object.keys(d.users)[0], d.users[Object.keys(d.users)[0]].predictions);
+  
   save(d);
+  
+  console.log("✅ Match deleted and saved");
+  
   renderAdmin();
   renderMatches();
   renderLeaderboard();
