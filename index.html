@@ -696,55 +696,54 @@ function msg(id,text,ok){
   const e=document.getElementById(id);
   e.textContent=text; e.className="msg "+(ok?"ok":"err");
 }
-async function doAuth(){
-  const d = db();
-  isAuthenticating = true;
-
-  const name  = document.getElementById("authName").value.trim();
+function doAuth() {
+  const action = document.getElementById("authAction").value;
   const email = document.getElementById("authEmail").value.trim();
-  const pass  = document.getElementById("authPass").value.trim();
-
-  if(authMode === "register"){
-    if(!name || !email || !pass){
-      isAuthenticating = false;
-      return msg("authMsg", "لطفاً تمام فیلدها رو پر کنید");
+  const pass = document.getElementById("authPass").value;
+  
+  const emailKey = encodeEmailKey(email); // ← اضافه کن
+  
+  if (action === "register") {
+    const name = document.getElementById("authName").value.trim();
+    if (!name || !email || !pass) {
+      alert("لطفاً همه فیلدها را پر کنید");
+      return;
     }
-    if(d.users[email]){
-      isAuthenticating = false;
-      return msg("authMsg", "این ایمیل قبلاً ثبت شده");
+    if (d.users[emailKey]) { // ← تغییر بده
+      alert("این ایمیل قبلاً ثبت شده است");
+      return;
     }
-
-    d.users[email] = { name, email, pass, predictions:{}, seenAnnouncements:[] };
-    current = email;
+    d.users[emailKey] = { name, email, password: pass, predictions: {}, seenAnnouncements: [] }; // ← تغییر بده
+    current = email; // همون ایمیل خام رو توی current نگه دار
     localStorage.setItem("wc_current", email);
     save(d);
-
-    msg("authMsg", "ثبت‌نام موفق بود ✅", true);
-  }
-  else {
-    if(!email || !pass){
-      isAuthenticating = false;
-      return msg("authMsg", "لطفاً ایمیل و رمز رو وارد کنید");
+    setTimeout(() => {
+      document.getElementById("authModal").style.display = "none";
+      refreshUI();
+      renderMatches();
+      checkNotifications();
+    }, 100);
+  } else {
+    if (!email || !pass) {
+      alert("لطفاً ایمیل و رمز عبور را وارد کنید");
+      return;
     }
-
-    const u = d.users[email];
-    if(!u || u.pass !== pass){
-      isAuthenticating = false;
-      return msg("authMsg", "ایمیل یا رمز اشتباه است");
+    const u = d.users[emailKey]; // ← تغییر بده
+    if (!u || u.password !== pass) { // ← اینجا هم pass → password
+      alert("ایمیل یا رمز عبور اشتباه است");
+      return;
     }
-
     current = email;
     localStorage.setItem("wc_current", email);
-    msg("authMsg", "ورود موفق ✅", true);
+    setTimeout(() => {
+      document.getElementById("authModal").style.display = "none";
+      refreshUI();
+      renderMatches();
+      checkNotifications();
+    }, 100);
   }
-
-  setTimeout(()=>{
-    isAuthenticating = false;
-    refreshUI();
-    renderMatches();
-    checkNotifications();
-  }, 500);
 }
+
 
 
 
