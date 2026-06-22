@@ -513,7 +513,7 @@ try {
   DATA = { users:{}, matches: DEFAULT_MATCHES, announcements: [] };
 }
 if(!DATA.users)         DATA.users   = {};
-if(!Array.isArray(DATA.matches))       DATA.matches = DEFAULT_MATCHES;
+if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
 if(!DATA.announcements) DATA.announcements = [];
 
 /* ====================== سازگاری کلید Firebase ====================== */
@@ -543,7 +543,7 @@ function decodeEmailKey(key){
 // نسخه‌ای از دیتا که کلیدهای users برای Firebase امن شدن
 function encodeForFirebase(d){
   const out = {
-    matches:       Array.isArray(d.matches) ? d.matches : DEFAULT_MATCHES,
+    matches:       d.matches       || DEFAULT_MATCHES,
     announcements: d.announcements  || [],
     users: {}
   };
@@ -557,7 +557,7 @@ function encodeForFirebase(d){
 // دیتایی که از Firebase اومده، کلیدهای users رو به ایمیل خام برمی‌گردونیم
 function decodeFromFirebase(val){
   const out = {
-    matches:       Array.isArray(val.matches) ? val.matches : DEFAULT_MATCHES,
+    matches:       val.matches       || DEFAULT_MATCHES,
     announcements: val.announcements  || [],
     users: {}
   };
@@ -571,7 +571,7 @@ function decodeFromFirebase(val){
 
 function db(){
   if(!DATA.users)         DATA.users   = {};
-  if(!Array.isArray(DATA.matches))       DATA.matches = DEFAULT_MATCHES;
+  if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
   if(!DATA.announcements) DATA.announcements = [];
   return DATA;
 }
@@ -585,10 +585,10 @@ function save(d){
     console.warn("localStorage save failed:", e);
   }
   // تلاش برای sync با سرور مشترک — کلیدهای ایمیل رو encode می‌کنیم
-  if(fbRef){
-    fbRef.set(encodeForFirebase(d))
-      .then(()=> console.log("✅ Firebase sync OK"))
-      .catch(err=> console.error("❌ Firebase sync FAILED:", err));
+  try {
+    fbRef.set(encodeForFirebase(d));
+  } catch(e) {
+    console.warn("Firebase sync failed (offline?):", e);
   }
 }
 
@@ -607,7 +607,7 @@ if(fbRef) {
   if(val){
     DATA = val;
     if(!DATA.users)         DATA.users   = {};
-    if(!Array.isArray(DATA.matches))       DATA.matches = DEFAULT_MATCHES;
+    if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
     if(!DATA.announcements) DATA.announcements = [];
     try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
   } else {
@@ -621,7 +621,7 @@ if(fbRef) {
     if(local && local.users && Object.keys(local.users).length > 0){
       DATA = local;
       if(!DATA.users)         DATA.users   = {};
-      if(!Array.isArray(DATA.matches))       DATA.matches = DEFAULT_MATCHES;
+      if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
       if(!DATA.announcements) DATA.announcements = [];
       try { fbRef.set(encodeForFirebase(DATA)); } catch(e){}   // ← encode موقع نوشتن
     } else {
@@ -1171,10 +1171,23 @@ function addMatch(){
 function deleteMatch(id){
   if(!confirm("مطمئنی می‌خوای این بازی رو حذف کنی؟")) return;
   const d=db();
+  
+  console.log("🗑 Deleting match:", id);
+  console.log("Before delete - matches count:", d.matches.length);
+  console.log("Before delete - user predictions sample:", Object.keys(d.users)[0], d.users[Object.keys(d.users)[0]].predictions);
+  
   d.matches = d.matches.filter(m=>m.id!==id);
+  
   // حذف پیش‌بینی‌های مربوطه
   Object.values(d.users).forEach(u=>{ delete (u.predictions||{})[id]; });
+  
+  console.log("After delete - matches count:", d.matches.length);
+  console.log("After delete - user predictions sample:", Object.keys(d.users)[0], d.users[Object.keys(d.users)[0]].predictions);
+  
   save(d);
+  
+  console.log("✅ Match deleted and saved");
+  
   renderAdmin();
   renderMatches();
   renderLeaderboard();
