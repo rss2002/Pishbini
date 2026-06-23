@@ -340,6 +340,7 @@ input[type="time"] { color:#000; }
   <button id="tab-leaderboard" onclick="showTab('leaderboard')">لیدربرد</button>
   <button id="tab-profile" onclick="showTab('profile')">پروفایل</button>
   <button id="tab-admin" class="hidden" onclick="showTab('admin')">پنل ادمین</button>
+  <button id="tab-livetable" onclick="showTab('livetable')">جدول لایو</button>
   <button id="helpBtn" title="راهنما">?</button>
 
 </div>
@@ -468,6 +469,20 @@ input[type="time"] { color:#000; }
   </div>
 
 </div>
+
+<div id="view-livetable" class="hidden">
+  <div class="card">
+    <h2 style="color:#ffd700;margin-bottom:14px;">📊 جدول زنده لیگ</h2>
+    <div id="liveTableMsg" style="color:#bfe9cf;font-size:13px;margin-bottom:10px;">در حال بارگذاری...</div>
+    <table>
+      <thead>
+        <tr><th>رتبه</th><th>تیم</th><th>بازی</th><th>برد</th><th>مساوی</th><th>باخت</th><th>امتیاز</th></tr>
+      </thead>
+      <tbody id="liveTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
 
 <script>
 /* ====================== داده‌ی پایه ====================== */
@@ -997,7 +1012,7 @@ function refreshUI(){
 }
 
 function showTab(name){
-  ["matches","leaderboard","profile","admin"].forEach(t=>{
+  ["matches","leaderboard","profile","admin","livetable"].forEach(t=>{
     document.getElementById("view-"+t).classList.toggle("hidden", t!==name);
     document.getElementById("tab-"+t).classList.toggle("active", t===name);
   });
@@ -1005,7 +1020,9 @@ function showTab(name){
   if(name==="leaderboard") renderLeaderboard();
   if(name==="profile")     renderProfile();
   if(name==="admin")       renderAdmin();
+  if(name==="livetable")   renderLiveTable();
 }
+
 
 /* ====================== بازی‌ها ====================== */
 function renderMatches(){
@@ -1055,6 +1072,54 @@ function renderMatches(){
   });
   updateTimers();
 }
+/* ====================== جدول لایو ====================== */
+const FOOTBALL_API_KEY = "bc3191a4b57f45f0b8de3893de7ad6f5";   // توکن رایگان از football-data.org
+const FOOTBALL_LEAGUE  = "WC";                  // PL=پریمیرلیگ, PD=لالیگا, SA=سری‌آ, BL1=بوندسلیگا
+
+let liveTableLoaded = false;
+
+async function renderLiveTable(){
+  const msg  = document.getElementById("liveTableMsg");
+  const body = document.getElementById("liveTableBody");
+
+  // فقط بار اول لود کن تا درخواست‌ها بیخود مصرف نشه
+  if(liveTableLoaded) return;
+
+  msg.textContent = "در حال بارگذاری...";
+  body.innerHTML = "";
+
+  try{
+    const res = await fetch(
+      `https://api.football-data.org/v4/competitions/${FOOTBALL_LEAGUE}/standings`,
+      { headers: { "X-Auth-Token": FOOTBALL_API_KEY } }
+    );
+    if(!res.ok) throw new Error("HTTP " + res.status);
+
+    const data = await res.json();
+    const table = data.standings.find(s => s.type === "TOTAL").table;
+
+    body.innerHTML = "";
+    table.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.position}</td>
+        <td style="text-align:right;">${row.team.name}</td>
+        <td>${row.playedGames}</td>
+        <td>${row.won}</td>
+        <td>${row.draw}</td>
+        <td>${row.lost}</td>
+        <td><b style="color:#ffd700;">${row.points}</b></td>`;
+      body.appendChild(tr);
+    });
+
+    msg.textContent = "آخرین به‌روزرسانی: " + new Date().toLocaleTimeString("fa-IR");
+    liveTableLoaded = true;
+  }catch(err){
+    msg.textContent = "خطا در دریافت جدول. بعداً دوباره امتحان کن.";
+    console.error("LiveTable error:", err);
+  }
+}
+
 
 /* ====================== لیدربرد ====================== */
 function renderLeaderboard(){
