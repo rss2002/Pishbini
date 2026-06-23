@@ -6,6 +6,116 @@
 <title>پیش‌بینی جام جهانی ⚽</title>
 <style>
 
+#helpBtn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 9998;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#helpBtn:hover {
+  transform: scale(1.1);
+  background: rgba(255,255,255,0.25);
+}
+
+
+#onboardingOverlay {
+  position: fixed;
+  top: 16px;
+  right: 16px;            /* گوشه‌ی بالا سمت راست (برای RTL) */
+  left: auto;
+  width: auto;
+  height: auto;
+  background: transparent; /* پرده‌ی مشکی حذف شد */
+  display: flex;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+#onboardingOverlay.hidden { display: none; }
+
+#onboardingBox {
+  background: transparent;  /* باکس سفید حذف شد */
+  box-shadow: none;         /* سایه حذف شد */
+  border-radius: 0;
+  padding: 0;
+  max-width: 220px;
+  width: auto;
+  text-align: center;
+  animation: slideUp 0.35s ease;
+}
+
+#onboardingCharacter {
+  width: 90px;
+  height: 140px;
+  margin: 0 auto 8px;
+  display: block;
+  background: transparent;
+}
+
+#onboardingText {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #fff;                 /* چون پس‌زمینه‌ی سفید نیست، متن روشن بهتر دیده می‌شه */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  margin-bottom: 12px;
+  min-height: 40px;
+}
+
+#onboardingNext {
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+}
+
+    #onboardingNext:hover { background:#256528; }
+    .highlight-pulse {
+  animation: goldGlow 1.2s infinite;
+  border-radius: 8px;
+  position: relative;
+  z-index: 10000;
+  /* هیچ background یا color اینجا نذار تا خود دکمه دست‌نخورده بمونه */
+}
+
+@keyframes goldGlow {
+  0%   { box-shadow: 0 0 8px 2px rgba(255,215,0,0.9), 0 0 0 0 rgba(255,215,0,0.7); }
+  70%  { box-shadow: 0 0 8px 2px rgba(255,215,0,0.9), 0 0 0 10px rgba(255,215,0,0); }
+  100% { box-shadow: 0 0 8px 2px rgba(255,215,0,0.9), 0 0 0 0 rgba(255,215,0,0); }
+}
+
+
+
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    @keyframes slideUp {
+      from{transform:translateY(30px); opacity:0;}
+      to{transform:translateY(0); opacity:1;}
+    }
+    @keyframes pulse {
+      0%{box-shadow:0 0 0 0 rgba(46,125,50,0.6);}
+      70%{box-shadow:0 0 0 10px rgba(46,125,50,0);}
+      100%{box-shadow:0 0 0 0 rgba(46,125,50,0);}
+    }
+
+
   .field, .score-in { color:#fff; }
   input[type="time"] { color:#fff; }
   .match-timer.closed { color:#fff; }
@@ -186,10 +296,20 @@ input[type="time"] { color:#000; }
 .lb-name:hover{color:#ffd700;}
 
 </style>
+
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 </head>
+<div id="onboardingOverlay" class="hidden">
+  <div id="onboardingBox">
+    <img id="onboardingCharacter" src="alianimtransp.png" alt="Coach">
+    <div id="onboardingText"></div>
+    <button id="onboardingNext">بعدی ←</button>
+  </div>
+</div>
+
 <body>
 
 <header>
@@ -204,6 +324,8 @@ input[type="time"] { color:#000; }
   <button id="tab-leaderboard" onclick="showTab('leaderboard')">لیدربرد</button>
   <button id="tab-profile" onclick="showTab('profile')">پروفایل</button>
   <button id="tab-admin" class="hidden" onclick="showTab('admin')">پنل ادمین</button>
+  <button id="helpBtn" title="راهنما">?</button>
+
 </div>
 
 <div class="container">
@@ -457,6 +579,16 @@ function updateTimers(){
 }
 setInterval(updateTimers, 1000);
 
+
+function showHelp() {
+  onboardingStep = 0;
+  document.getElementById("onboardingOverlay").classList.remove("hidden");
+  showOnboardingStep(onboardingStep);
+}
+
+document.getElementById("helpBtn").addEventListener("click", showHelp);
+
+
 /* ====================== ذخیره‌سازی (Firebase) ====================== */
 const firebaseConfig = {
   apiKey: "AIzaSyC2qVdIHgxLY1ojHnf2rnfBcB1Fv5ikfao",
@@ -632,6 +764,77 @@ if(fbRef) {
   }
 }
 
+
+const ONBOARDING_STEPS = [
+  "سلام! 👋 من علی,راهنمای تو هستم. بذار سریع بهت یاد بدم چطور سایت کار می‌کنه.",
+  "از بخش بازی‌ها می‌تونی نتیجه بازی‌ها رو پیش‌بینی کنی. ⚽",
+  "حواست به تایمر باشه! پیش‌بینی باید قبل از تموم شدن وقت ثبت بشه. ⏰",
+  "بعد از ثبت، پیش‌بینیت قفل میشه و دیگه نمی‌تونی تغییرش بدی. 🔒",
+  "از بخش لیدربرد می‌تونی امتیازها و رتبه‌ها رو ببینی. 🏆",
+  "از بخش پروفایل هم ریز امتیازها و پیش‌بینی‌های خودت رو می‌بینی. 👤",
+  "همین! آماده‌ای؟ بزن بریم! 🚀"
+];
+
+let onboardingStep = 0;
+
+function startOnboarding() {
+  if (localStorage.getItem("wc_onboarding_seen")) return;
+  onboardingStep = 0;
+  document.getElementById("onboardingOverlay").classList.remove("hidden");
+  showOnboardingStep(onboardingStep);
+}
+
+function showOnboardingStep(step) {
+  const textEl = document.getElementById("onboardingText");
+  const btnEl = document.getElementById("onboardingNext");
+
+  textEl.textContent = ONBOARDING_STEPS[step];
+
+  // پاک کردن هایلایت‌های قبلی
+  document.querySelectorAll('.highlight-pulse').forEach(el => {
+    el.classList.remove('highlight-pulse');
+  });
+
+  // هایلایت دکمه‌های مرتبط
+   // هایلایت دکمه‌ها / المان‌های مرتبط
+  if (step === 1) {
+    const matchBtn = document.getElementById("tab-matches");
+    if (matchBtn) matchBtn.classList.add('highlight-pulse');
+  } else if (step === 2) {
+    document.querySelectorAll('.match-timer').forEach(el => {
+      el.classList.add('highlight-pulse');
+    });
+  } else if (step === 4) {
+    const leaderBtn = document.getElementById("tab-leaderboard");
+    if (leaderBtn) leaderBtn.classList.add('highlight-pulse');
+  } else if (step === 5) {
+    const profileBtn = document.getElementById("tab-profile");
+    if (profileBtn) profileBtn.classList.add('highlight-pulse');
+  }
+
+}
+
+function nextOnboardingStep() {
+  onboardingStep++;
+  if (onboardingStep >= ONBOARDING_STEPS.length) {
+    finishOnboarding();
+  } else {
+    showOnboardingStep(onboardingStep);
+  }
+}
+
+function finishOnboarding() {
+  document.getElementById("onboardingOverlay").classList.add("hidden");
+  document.querySelectorAll('.highlight-pulse').forEach(el => {
+    el.classList.remove('highlight-pulse');
+  });
+  localStorage.setItem("wc_onboarding_seen", "1");
+}
+
+// اتصال دکمه بعدی
+document.getElementById("onboardingNext").addEventListener("click", nextOnboardingStep);
+
+
 /* ====================== امتیازدهی ====================== */
 function calcPoints(pred, result){
   if(pred.h === result.h && pred.a === result.a) return 10;
@@ -706,6 +909,7 @@ async function doAuth(){
     localStorage.setItem("wc_current", current);
     save(d);
     setAuthMsg("ثبت‌نام موفق ✅", true);
+     startOnboarding();
     setTimeout(()=>{
       isAuthenticating = false;
       refreshUI(); renderMatches(); checkNotifications();
