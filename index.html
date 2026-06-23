@@ -398,8 +398,11 @@ const DEFAULT_MATCHES = [
 ];
 
 const ADMIN_EMAIL = "admin@cup.com";
+const ADMIN_KEY = encodeEmailKey(ADMIN_EMAIL);
+
+
 // کلید encode شده‌ی ادمین — یک بار محاسبه می‌شه
-const ADMIN_KEY = "admin_AT_cup_DOT_com";
+
 
 /* ====================== تاریخ و زمان (شمسی) ====================== */
 function jalaliToGregorian(jy, jm, jd){
