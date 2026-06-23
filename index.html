@@ -849,7 +849,7 @@ function renderMatches(){
   const box=document.getElementById("matchList");
   box.innerHTML="";
   if(!current) return;
-  cconst u = getCurrentUser(d);
+  const u = getCurrentUser(d);
 
   // ◀️ اصلاح: اگر کاربر توی دیتابیس نیست، برنگرد خطا بده
   if(!u) return;
