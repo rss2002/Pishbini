@@ -687,9 +687,8 @@ function userTotal(u){
   return total;
 }
 
-function isAdmin() {
-  return current === ADMIN_EMAIL;
-}
+function isAdmin() { return current === encodeEmailKey(ADMIN_EMAIL); }
+
 
 /* ====================== احراز هویت ====================== */
 function toggleAuthMode(){
@@ -726,8 +725,14 @@ async function doAuth(){
       isAuthenticating = false; return;
     }
     d.users[emailKey] = { name, email, pass, predictions:{}, seenAnnouncements:[] }; // ← تغییر
-    current = email; // ← email خام برای session
-    localStorage.setItem("wc_current", email);
+          current = encodeEmailKey(email);
+   localStorage.setItem("wc_current", current);
+ || null;
+   if (current && current.indexOf("@") !== -1) {
+     current = encodeEmailKey(current);
+     localStorage.setItem("wc_current", current);
+   }
+
     save(d);
     setAuthMsg("ثبت‌نام موفق ✅");
     setTimeout(()=>{
@@ -744,8 +749,8 @@ async function doAuth(){
       setAuthMsg("ایمیل یا رمز عبور اشتباه است");
       isAuthenticating = false; return;
     }
-    current = email; // ← email خام برای session
-    localStorage.setItem("wc_current", email);
+       current = encodeEmailKey(email);
+   localStorage.setItem("wc_current", current);
     setAuthMsg("ورود موفق ✅");
     setTimeout(()=>{
       isAuthenticating = false;
