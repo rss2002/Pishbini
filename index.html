@@ -591,6 +591,13 @@ function db(){
   return DATA;
 }
 
+function getCurrentUser(d) {
+  if (!current || !d.users) return null;
+  if (d.users[current]) return d.users[current];
+  const encoded = encodeEmailKey(current);
+  return d.users[encoded] || null;
+}
+
 
 function save(d){
   DATA = d;
@@ -610,6 +617,10 @@ function save(d){
 
 
 let current = localStorage.getItem("wc_current") || null;
+if (current && current.indexOf("@") !== -1) {
+  current = encodeEmailKey(current);
+  localStorage.setItem("wc_current", current);
+}
 let isAuthenticating = false;
 let authMode = "login"; // login | register
 
@@ -796,7 +807,7 @@ function refreshUI(){
   const logged = !!current;
 
   // فقط وقتی session رو نامعتبر کن که مطمئنیم دیتا کامل لود شده و کاربر واقعاً نیست
-  if(logged && !isAuthenticating && d.users && Object.keys(d.users).length > 0 && !d.users[current]){
+  if(logged && !isAuthenticating && d.users && Object.keys(d.users).length > 0 && !getCurrentUser(d)){
     current = null;
     localStorage.removeItem("wc_current");
     document.getElementById("auth").classList.remove("hidden");
@@ -811,8 +822,8 @@ function refreshUI(){
   document.getElementById("needLogin").style.display = logged ? "none" : "block";
   document.getElementById("tab-admin").classList.toggle("hidden", !isAdmin());
 
-  if(logged && d.users[current]){
-    const u = d.users[current];
+ if(logged && getCurrentUser(d)){
+    const u = getCurrentUser(d);
     document.getElementById("userName").textContent = u.name;
     document.getElementById("userScore").textContent = userTotal(u);
   }
@@ -838,7 +849,7 @@ function renderMatches(){
   const box=document.getElementById("matchList");
   box.innerHTML="";
   if(!current) return;
-  const u=d.users[current];
+  cconst u = getCurrentUser(d);
 
   // ◀️ اصلاح: اگر کاربر توی دیتابیس نیست، برنگرد خطا بده
   if(!u) return;
@@ -1072,7 +1083,8 @@ function submitPred(id){
   const a = document.getElementById("a_"+id).value;
   if(h==="" || a===""){ alert("هر دو امتیاز رو وارد کن"); return; }
   const d=db();
-  const u=d.users[current];
+  const u = getCurrentUser(d);
+if(!u){ alert("کاربر پیدا نشد"); return; }
   const m=d.matches.find(x=>x.id===id);
   if(!isPredictionOpen(m)){ alert("مهلت پیش‌بینی تمام شده"); return; }
   if(u.predictions[id]){ alert("قبلاً ثبت کردی"); return; }
@@ -1133,7 +1145,7 @@ function checkSoloPrize(d, m){
 function checkNotifications(){
   if(!current) return;
   const d=db();
-  const u=d.users[current];
+  const u = getCurrentUser(d);
   if(!u) return;
 
   // ۱) جایزه‌ی شخصی برنده
