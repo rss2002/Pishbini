@@ -45,6 +45,22 @@
   z-index: 9999;
   animation: fadeIn 0.3s ease;
 }
+@media (max-width: 600px) {
+  #onboardingOverlay {
+    top: auto;
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    justify-content: center;
+  }
+
+  #onboardingBox {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
 #onboardingOverlay.hidden { display: none; }
 
 #onboardingBox {
