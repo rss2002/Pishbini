@@ -616,11 +616,9 @@ function save(d){
 }
 
 
-let current = localStorage.getItem("wc_current") || null;
-if (current && current.indexOf("@") !== -1) {
-  current = encodeEmailKey(current);
-  localStorage.setItem("wc_current", current);
-}
+current = encodeEmailKey(email);
+localStorage.setItem("wc_current", current);
+
 let isAuthenticating = false;
 let authMode = "login"; // login | register
 
