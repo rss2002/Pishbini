@@ -702,62 +702,65 @@ function toggleAuthMode(){
   document.getElementById("nameField").style.display = reg ? "block" : "none";
   msg("authMsg","");
 }
-function msg(id,text,ok){
-  const e=document.getElementById(id);
-  e.textContent=text; e.className="msg "+(ok?"ok":"err");
+function msg(id, text, ok) {
+  const e = document.getElementById(id);
+  if (e) {
+    e.textContent = text;
+    e.className = "msg " + (ok ? "ok" : "err");
+  }
 }
-async function doAuth(){
+// این خط را اضافه کنید تا خطای لود نشدن دکمه‌ها رفع شود
+function setAuthMsg(text, ok = false) { msg("authMsg", text, ok); }
+
+async function doAuth() {
   const d = db();
   isAuthenticating = true;
-  const name  = document.getElementById("authName").value.trim();
+  const name = document.getElementById("authName").value.trim();
   const email = document.getElementById("authEmail").value.trim();
-  const pass  = document.getElementById("authPass").value.trim();
+  const pass = document.getElementById("authPass").value.trim();
   
-  const emailKey = encodeEmailKey(email); // ← اضافه شد
+  const emailKey = encodeEmailKey(email);
 
-  if(authMode === "register"){
-    if(!name || !email || !pass){
+  if (authMode === "register") {
+    if (!name || !email || !pass) {
       setAuthMsg("همه فیلدها را پر کن");
       isAuthenticating = false; return;
     }
-    if(d.users[emailKey]){ // ← تغییر از email به emailKey
+    if (d.users[emailKey]) {
       setAuthMsg("این ایمیل قبلا ثبت شده");
       isAuthenticating = false; return;
     }
-    d.users[emailKey] = { name, email, pass, predictions:{}, seenAnnouncements:[] }; // ← تغییر
-          current = encodeEmailKey(email);
-   localStorage.setItem("wc_current", current);
- || null;
-   if (current && current.indexOf("@") !== -1) {
-     current = encodeEmailKey(current);
-     localStorage.setItem("wc_current", current);
-   }
-
+    d.users[emailKey] = { name, email, pass, predictions: {}, seenAnnouncements: [] };
+    current = emailKey;
+    localStorage.setItem("wc_current", current);
+    
     save(d);
-    setAuthMsg("ثبت‌نام موفق ✅");
-    setTimeout(()=>{
+    setAuthMsg("ثبت‌نام موفق ✅", true);
+    setTimeout(() => {
       isAuthenticating = false;
       refreshUI(); renderMatches(); checkNotifications();
     }, 200);
   } else {
-    if(!email || !pass){
+    // بخش Login
+    if (!email || !pass) {
       setAuthMsg("ایمیل و رمز عبور را وارد کن");
       isAuthenticating = false; return;
     }
-    const u = d.users[emailKey]; // ← تغییر از email به emailKey
-    if(!u || u.pass !== pass){
+    const u = d.users[emailKey];
+    if (!u || u.pass !== pass) {
       setAuthMsg("ایمیل یا رمز عبور اشتباه است");
       isAuthenticating = false; return;
     }
-       current = encodeEmailKey(email);
-   localStorage.setItem("wc_current", current);
-    setAuthMsg("ورود موفق ✅");
-    setTimeout(()=>{
+    current = emailKey;
+    localStorage.setItem("wc_current", current);
+    setAuthMsg("ورود موفق ✅", true);
+    setTimeout(() => {
       isAuthenticating = false;
       refreshUI(); renderMatches(); checkNotifications();
     }, 200);
   }
 }
+
 
 
 
