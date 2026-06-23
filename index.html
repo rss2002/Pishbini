@@ -1083,8 +1083,8 @@ function submitPred(id){
   const a = document.getElementById("a_"+id).value;
   if(h==="" || a===""){ alert("هر دو امتیاز رو وارد کن"); return; }
   const d=db();
-  const u = getCurrentUser(d);
-if(!u){ alert("کاربر پیدا نشد"); return; }
+  const u=getCurrentUser(d);
+  if(!u){ alert("کاربر پیدا نشد. لطفاً دوباره وارد شوید."); return; }
   const m=d.matches.find(x=>x.id===id);
   if(!isPredictionOpen(m)){ alert("مهلت پیش‌بینی تمام شده"); return; }
   if(u.predictions[id]){ alert("قبلاً ثبت کردی"); return; }
