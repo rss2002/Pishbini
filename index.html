@@ -991,18 +991,20 @@ if(fbRef) {
 }
 
 
+      // --- جایگزین کد قبلی در انتهای Listener ---
       refreshUI();
-      if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
-      if(!document.getElementById("view-leaderboard").classList.contains("hidden")) renderLeaderboard();
-      if(!document.getElementById("view-profile").classList.contains("hidden"))     renderProfile();
-      // باگ رفع: خط تکراری renderProfile() حذف شد
-      if(!document.getElementById("view-admin").classList.contains("hidden"))       renderAdmin();
+      // رندر کردن همه بخش‌ها بدون شرط hidden بودن، تا دیتا در DOM آماده باشه
+      renderMatches();
+      renderLeaderboard();
+      renderProfile();
+      renderAdmin();
       checkNotifications();
     });
   } catch(e) {
     console.warn("⚠️ Firebase listener failed:", e);
   }
 }
+
 
 
 const ONBOARDING_STEPS = [
