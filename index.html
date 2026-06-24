@@ -961,18 +961,26 @@ if(fbRef) {
     fbRef.on("value", snap=>{
   const raw = snap.val();
   if(raw){
+      const raw = snap.val();
+  if(raw && raw.users && Object.keys(raw.users).length){
     const val = decodeFromFirebase(raw);
-    DATA = val;                       // ریموت = منبع حقیقت
-    if(!DATA.users)         DATA.users = {};
-    if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-    if(!DATA.announcements) DATA.announcements = [];
-    if(!DATA.users[ADMIN_KEY]){
-      DATA.users[ADMIN_KEY] = { name:"Admin", email:ADMIN_EMAIL, pass:"adminpass", predictions:{}, seenAnnouncements:[] };
-    }
-    try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+    // merge: ریموت اولویت دارد، اما کاربرِ تازه‌ساختهٔ محلی که هنوز sync نشده پاک نمی‌شود
+    DATA.users        = Object.assign({}, DATA.users, val.users);
+    DATA.matches      = val.matches || DATA.matches || DEFAULT_MATCHES;
+    DATA.announcements= val.announcements || DATA.announcements || [];
   } else {
-    // ریموت کاملاً خالیه (اولین بار) → یک‌بار محلی را بالا ببر
-    
+    // ریموت خالیه → state محلی را یک‌بار بالا ببر، DATA را پاک نکن
+    if(DATA.users && Object.keys(DATA.users).length){
+      fbRef.set(encodeForFirebase(DATA));
+    }
+  }
+  if(!DATA.users)         DATA.users = {};
+  if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+  if(!DATA.announcements) DATA.announcements = [];
+  if(!DATA.users[ADMIN_KEY]){
+    DATA.users[ADMIN_KEY] = { name:"Admin", email:ADMIN_EMAIL, pass:"adminpass", predictions:{}, seenAnnouncements:[] };
+  }
+  try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
   }
   refreshUI();
   // ... بقیه renderها مثل قبل
