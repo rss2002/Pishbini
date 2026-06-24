@@ -926,6 +926,7 @@ const ONBOARDING_STEPS = [
   "از بخش بازی‌ها می‌تونی نتیجه بازی‌ها رو پیش‌بینی کنی. ⚽",
   "حواست به تایمر باشه! پیش‌بینی باید قبل از تموم شدن وقت ثبت بشه. ⏰",
   "بعد از ثبت، پیش‌بینیت قفل میشه و دیگه نمی‌تونی تغییرش بدی. 🔒",
+  "از دکمه 👥 کنار هر بازی می‌تونی پیش‌بینی بقیه کاربران رو ببینی! 📊",
   "از بخش لیدربرد می‌تونی امتیازها و رتبه‌ها رو ببینی. 🏆",
   "از بخش پروفایل هم ریز امتیازها و پیش‌بینی‌های خودت رو می‌بینی. 👤",
   "همین! آماده‌ای؟ بزن بریم! 🚀"
@@ -951,8 +952,7 @@ function showOnboardingStep(step) {
     el.classList.remove('highlight-pulse');
   });
 
-  // هایلایت دکمه‌های مرتبط
-   // هایلایت دکمه‌ها / المان‌های مرتبط
+  // هایلایت دکمه‌ها / المان‌های مرتبط
   if (step === 1) {
     const matchBtn = document.getElementById("tab-matches");
     if (matchBtn) matchBtn.classList.add('highlight-pulse');
@@ -961,14 +961,19 @@ function showOnboardingStep(step) {
       el.classList.add('highlight-pulse');
     });
   } else if (step === 4) {
+    // هایلایت دکمه‌های مشاهده پیش‌بینی کاربران
+    document.querySelectorAll('.view-preds-btn').forEach(el => {
+      el.classList.add('highlight-pulse');
+    });
+  } else if (step === 5) {
     const leaderBtn = document.getElementById("tab-leaderboard");
     if (leaderBtn) leaderBtn.classList.add('highlight-pulse');
-  } else if (step === 5) {
+  } else if (step === 6) {
     const profileBtn = document.getElementById("tab-profile");
     if (profileBtn) profileBtn.classList.add('highlight-pulse');
   }
-
 }
+
 
 function nextOnboardingStep() {
   onboardingStep++;
