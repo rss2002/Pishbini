@@ -6,6 +6,37 @@
 <title>پیش‌بینی جام جهانی ⚽</title>
 <style>
 
+#predModal *,
+#predModal div,
+#predModal span,
+#predModal p {
+  color: #fff !important;
+}
+
+.view-preds-btn {
+  background: rgba(247, 246, 246, 0.322);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.view-preds-btn:hover {
+  background: #ffd700;
+  color: #646c1a57;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+
 .group-card {
   background: linear-gradient(135deg, #1e3a5f 0%, #2a5298 100%);
   border-radius: 12px;
@@ -549,6 +580,11 @@ input[type="time"] { color:#000; }
       </table>
     </div>
   </div>
+<div id="predModal" class="modal-overlay hidden" onclick="closePredModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <!-- محتوا توسط showMatchPredictions تزریق می‌شود -->
+  </div>
+</div>
 
   <!-- PRIZE / ANNOUNCEMENT MODAL -->
   <div id="prizeModal" class="modal-overlay hidden">
@@ -1134,7 +1170,10 @@ function renderMatches(){
     const start=matchStartDate(m);
     const flag = code => `<span class="flag-svg">${FLAGS[code]||''}</span>`;
     let html=`<div class="match ${locked?'locked':''}" style="animation-delay:${idx*0.08}s">
-      <div class="meta">📅 ${m.date} — ⏰ ${m.time||'--:--'}</div>
+      <div class="meta">
+        <span>📅 ${m.date} — ⏰ ${m.time||'--:--'}</span>
+        <button class="view-preds-btn" onclick="showMatchPredictions(${m.id})" title="مشاهده پیش‌بینی کاربران">👥</button>
+      </div>
       <div class="teams">
         <div class="team">${flag(m.hc)}<span class="tname">${m.home}</span></div>
         <input class="score-in" id="h_${m.id}" type="number" min="0" value="${pred?pred.h:''}" ${canEdit?'':'disabled'}>
@@ -1158,8 +1197,11 @@ function renderMatches(){
     html+=`<div class="match-timer" data-deadline="${dl.getTime()}" data-start="${start.getTime()}"></div>`;
     html+=`</div>`;
     box.innerHTML+=html;
+    
   });
   updateTimers();
+  
+
 }
 /* ====================== جدول لایو ====================== */
 async function fetchLiveTable() {
@@ -1344,6 +1386,12 @@ function closeUserModal(e){
     document.getElementById("userModal").classList.add("hidden");
   }
 }
+function closePredModal(e){
+  if(!e || e.target.id === "predModal"){
+    document.getElementById("predModal").classList.add("hidden");
+  }
+}
+
 
 /* ====================== ذخیره زمان‌بندی ====================== */
 function saveSchedule(id){
@@ -1607,6 +1655,46 @@ function saveBonus(key){
   renderLeaderboard();
   refreshUI();
 }
+
+function showMatchPredictions(matchId) {
+  const d = db();
+  const match = d.matches.find(m => m.id === matchId);
+  const modal = document.getElementById("predModal"); // تغییر از userModal به predModal
+  const modalBox = modal.querySelector(".modal-box");
+
+  let rowsHtml = "";
+  Object.values(d.users).forEach(user => {
+    if (user.predictions && user.predictions[matchId]) {
+      const p = user.predictions[matchId];
+      rowsHtml += `
+        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #444; align-items:center;">
+          <span style="color:#ffd700; font-weight:bold;">${user.name}</span>
+          <span style="background:#2a5298; padding:4px 12px; border-radius:15px; font-family:monospace; direction:ltr; color:#fff;">
+            ${p.h} - ${p.a}
+          </span>
+        </div>`;
+    }
+  });
+
+  if (rowsHtml === "") {
+    rowsHtml = `<div style="text-align:center; padding:20px; color:#aaa;">هنوز هیچ پیش‌بینی برای این بازی ثبت نشده است.</div>`;
+  }
+
+  modalBox.innerHTML = `
+    <button class="modal-close" onclick="closePredModal()">✕</button>
+    <h3 style="color:#ffd700; margin-bottom:20px; text-align:center; border-bottom:2px solid #ffd700; padding-bottom:10px;">
+      پیش‌بینی کاربران برای بازی ${match.home} - ${match.away}
+    </h3>
+    <div style="max-height:400px; overflow-y:auto;">
+      ${rowsHtml}
+    </div>
+  `;
+
+  modal.classList.remove("hidden");
+}
+
+
+
 
 // راه‌اندازی اولیه
 refreshUI();
