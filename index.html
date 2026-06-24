@@ -949,50 +949,38 @@ function getCurrentUser(d) {
 function save(d){
   DATA = d;
   localStorage.setItem("wc_data", JSON.stringify(d));
+}
   // فقط وقتی کاربر واقعی داریم روی Firebase بنویس
   const userCount = Object.keys(d.users || {}).filter(k => k !== ADMIN_KEY).length;
   if(fbRef && userCount > 0){
     fbRef.set(encodeForFirebase(d));
   }
-}
+
 
 
 // گوش دادن به تغییرات آنلاین
 if(fbRef) {
   try {
     fbRef.on("value", snap=>{
-      const raw = snap.val();
-      if(raw){
-  const val = decodeFromFirebase(raw);
-  // گارد: اگه دیتای ریموت کاربر نداره ولی محلی داره، بازنویسی نکن
-  const remoteUsers = Object.keys(val.users || {}).length;
-  const localUsers  = Object.keys(DATA.users || {}).length;
-  if(remoteUsers === 0 && localUsers > 0){
-    // ریموت خالیه، دیتای محلی درست رو نگه دار و دوباره روی Firebase بنویس
-    save(DATA);
-  } else {
-    DATA = val;
+  const raw = snap.val();
+  if(raw){
+    const val = decodeFromFirebase(raw);
+    DATA = val;                       // ریموت = منبع حقیقت
     if(!DATA.users)         DATA.users = {};
     if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
     if(!DATA.announcements) DATA.announcements = [];
-
     if(!DATA.users[ADMIN_KEY]){
-      DATA.users[ADMIN_KEY] = {
-        name: "Admin",
-        email: ADMIN_EMAIL,
-        pass: "adminpass",
-        predictions: {},
-        seenAnnouncements: []
-      };
+      DATA.users[ADMIN_KEY] = { name:"Admin", email:ADMIN_EMAIL, pass:"adminpass", predictions:{}, seenAnnouncements:[] };
     }
-
     try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+  } else {
+    // ریموت کاملاً خالیه (اولین بار) → یک‌بار محلی را بالا ببر
+    if(fbRef && Object.keys(DATA.users||{}).length) fbRef.set(encodeForFirebase(DATA));
   }
-}
+  refreshUI();
+  // ... بقیه renderها مثل قبل
 
 
-      // --- جایگزین کد قبلی در انتهای Listener ---
-      refreshUI();
       // رندر کردن همه بخش‌ها بدون شرط hidden بودن، تا دیتا در DOM آماده باشه
       renderMatches();
       renderLeaderboard();
@@ -1152,9 +1140,14 @@ async function doAuth(){
     }
     // باگ رفع: email خام داخل آبجکت کاربر ذخیره می‌شه (برای نمایش)
     d.users[emailKey] = { name, email, pass, predictions:{}, seenAnnouncements:[] };
-    current = emailKey;
-    localStorage.setItem("wc_current", current);
-    save(d);
+current = emailKey;
+localStorage.setItem("wc_current", emailKey);
+save(d); // محلی
+
+if(fbRef){
+  fbRef.child("users/"+encodeEmailKey(emailKey)).set(d.users[emailKey]);
+}
+
     setAuthMsg("ثبت‌نام موفق ✅", true);
      startOnboarding();
     setTimeout(()=>{
@@ -1620,10 +1613,19 @@ function submitPred(id){
   if(!isPredictionOpen(m)){ alert("مهلت پیش‌بینی تمام شده"); return; }
   if(u.predictions[id]){ alert("قبلاً ثبت کردی"); return; }
   u.predictions[id] = { h:+h, a:+a };
-  save(d);
+
+  save(d); // محلی
+
+  // فقط همین پیش‌بینی روی Firebase، نه کل DB
+  if(fbRef){
+    fbRef.child("users/"+encodeEmailKey(current)+"/predictions/"+id)
+         .set({ h:+h, a:+a });
+  }
+
   renderMatches();
   refreshUI();
 }
+
 
 const PRIZE_TEXT = "۴۰۰ هزار تومن";
 
