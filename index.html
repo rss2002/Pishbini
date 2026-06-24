@@ -133,6 +133,58 @@
   background: rgba(255,255,255,0.25);
 }
 
+/* Inbox button - styled like helpBtn */
+#inboxBtn {
+  position: fixed;
+  top: 16px;
+  left: 60px; /* فاصله از helpBtn که در left: 16px هست */
+  width: 40px;
+  height: 32px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  background: rgba(255, 215, 0, 0.15);
+  backdrop-filter: blur(10px);
+  color: #ffd700;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 2000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+#inboxBtn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 215, 0, 0.25);
+}
+
+.inbox-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff3333;
+  color: #fff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.inbox-badge.hidden {
+  display: none;
+}
+
+
+
+
 
 #onboardingOverlay {
   position: fixed;
@@ -163,6 +215,15 @@
 }
 
 #onboardingOverlay.hidden { display: none; }
+
+.inbox-msg {
+  color: #fff;
+}
+
+.inbox-msg small {
+  color: #ccc;
+}
+
 
 #onboardingBox {
   background: transparent;  /* باکس سفید حذف شد */
@@ -458,12 +519,18 @@ input[type="time"] { color:#000; }
 </header>
 
 <div class="tabs">
+  
   <button id="tab-matches" class="active" onclick="showTab('matches')">بازی‌ها</button>
   <button id="tab-leaderboard" onclick="showTab('leaderboard')">لیدربرد</button>
   <button id="tab-profile" onclick="showTab('profile')">پروفایل</button>
   <button id="tab-admin" class="hidden" onclick="showTab('admin')">پنل ادمین</button>
   <button id="tab-livetable" onclick="showTab('livetable')">جدول مسابقات</button>
-  <button id="helpBtn" title="راهنما">?</button>
+  
+</button>
+ <button id="helpBtn" title="راهنما">?</button>
+<button id="inboxBtn" onclick="openInbox()" title="پیام‌ها">
+  📬 <span id="inboxBadge" class="inbox-badge hidden">0</span>
+</button>
 
 </div>
 
@@ -596,6 +663,18 @@ input[type="time"] { color:#000; }
   </div>
 
 </div>
+
+<!-- INBOX MODAL -->
+<div id="inboxModal" class="modal-overlay hidden" onclick="closeInbox(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="width:650px; max-height:700px;">
+    <button class="modal-close" onclick="closeInbox()">✕</button>
+    <h2 style="color:#ffd700; margin-bottom:25px;">📬 پیام‌های شما</h2>
+    <div id="inboxMessages" style="max-height:550px; overflow-y:auto;"></div>
+  </div>
+</div>
+
+
+
 
 <div id="view-livetable" class="hidden">
   <div class="card">
@@ -1138,6 +1217,7 @@ function refreshUI(){
     const u = getCurrentUser(d);
     document.getElementById("userName").textContent = u.name;
     document.getElementById("userScore").textContent = userTotal(u);
+    updateInboxBadge();   // ← این خط اضافه شود
   }
 }
 
@@ -1203,11 +1283,18 @@ function renderMatches(){
     html+=`</div>`;
     box.innerHTML+=html;
     
+    
   });
+    box.innerHTML = html;
   updateTimers();
   
-
+  // چک کردن نتایج جدید
+  setTimeout(checkNewResults, 300);
 }
+
+  
+
+
 /* ====================== جدول لایو ====================== */
 async function fetchLiveTable() {
   const FOOTBALL_API_KEY = "bc3191a4b57f45f0b8de3893de7ad6f5";
@@ -1542,11 +1629,13 @@ function setResult(id){
   m.result = { h:+h, a:+a };
   checkSoloPrize(d, m);
   save(d);
+  checkNewResults();        // ← این خط اضافه شد
   alert("نتیجه ثبت شد ✅");
   renderAdmin();
   renderLeaderboard();
   refreshUI();
 }
+
 
 function checkSoloPrize(d, m){
   if(m.prizeDone) return;
@@ -1563,47 +1652,66 @@ function checkSoloPrize(d, m){
 
   const winner = exactUsers[0];
   winner.soloExactWins = (winner.soloExactWins||0)+1;
-  winner.pendingPrize = {
-    match: `${m.home} - ${m.away}`,
-    score: `${m.result.h}-${m.result.a}`
-  };
 
-  if(!d.announcements) d.announcements=[];
-  d.announcements.push({
-    id: "ann_"+m.id+"_"+Date.now(),
-    winnerEmail: winner.email,
-    winnerName: winner.name,
-    match: `${m.home} - ${m.away}`
+  // فقط در inbox خود برنده ذخیره می‌شود
+  if(!winner.inbox) winner.inbox = [];
+  winner.inbox.unshift({
+    id: Date.now(),
+    matchId: m.id,
+    matchName: `${m.home} - ${m.away}`,
+    text: `🎉 تبریک! نتیجه ${m.home} - ${m.away} (${m.result.h}-${m.result.a}) رو دقیق حدس زدی و ۱۰ امتیاز گرفتی!`,
+    timestamp: new Date().toISOString(),
+    read: false
   });
 }
+
+
+
+
+
+
+
 
 function checkNotifications(){
   if(!current) return;
   const d=db();
-  const u = getCurrentUser(d);
+  const u=d.users[current];
   if(!u) return;
 
   if(u.pendingPrize){
-    const pr=u.pendingPrize;
-    showPrize("🎉 تبریک!",
-      `شما تنها کسی بودید که نتیجه‌ی دقیق بازی <b>${pr.match}</b> (${pr.score}) را حدس زدید!<br><br>شما برنده‌ی جایزه‌ی <b>${PRIZE_TEXT}</b> شدید 🏆`);
+    showPrize("🎉 تبریک!", `
+      <div style="line-height:1.8">
+        <div>شما در پیش‌بینی <b>${u.pendingPrize.match}</b> دقیق زدید!</div>
+        <div>نتیجه دقیق: <b>${u.pendingPrize.score}</b></div>
+      </div>
+    `);
     delete u.pendingPrize;
     save(d);
     return;
   }
 
-  if(!u.seenAnnouncements) u.seenAnnouncements=[];
-  const anns=d.announcements||[];
-  const unseen=anns.filter(a=> !u.seenAnnouncements.includes(a.id) && a.winnerEmail!==u.email);
+  const seen = u.seenAnnouncements || [];
+  const unseen = (d.announcements || []).filter(a => !seen.includes(a.id));
   if(unseen.length){
-    const lines=unseen.map(a=>
-      `🏆 کاربر <b>${a.winnerName}</b> با حدس دقیق نتیجه‌ی بازی <b>${a.match}</b> برنده‌ی جایزه‌ی <b>${PRIZE_TEXT}</b> شد!`
-    ).join("<br><br>");
-    showPrize("📢 اعلان", lines);
-    unseen.forEach(a=> u.seenAnnouncements.push(a.id));
+    u.seenAnnouncements = [...seen, ...unseen.map(a=>a.id)];
     save(d);
+    showPrize("📢 اعلان", `
+      <div style="line-height:1.8">
+        ${unseen.map(a => `<div>🎯 ${a.winnerName} در بازی <b>${a.match}</b> برنده شد</div>`).join("")}
+        
+      </div>
+    `);
+    // در انتهای کد یا داخل بلاک شروع برنامه
+window.addEventListener('load', () => {
+  checkNotifications();
+  updateInboxBadge();
+});
+
   }
 }
+
+
+
 
 function showPrize(title, html){
   document.getElementById("prizeTitle").innerHTML=title;
@@ -1656,6 +1764,10 @@ function saveBonus(key){
   u.bonus = val;
   save(d);
   alert("امتیاز ذخیره شد ✅");
+
+
+
+  
   renderAdmin();
   renderLeaderboard();
   refreshUI();
@@ -1699,11 +1811,170 @@ function showMatchPredictions(matchId) {
 }
 
 
+// ══════════════════════════════════════════════════════════════
+// INBOX & NOTIFICATIONS SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+let notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+
+function addNotification(matchId, matchName, points) {
+  // چک کن نوتیف تکراری نسازیم
+  const exists = notifications.find(n => n.matchId === matchId);
+  if (exists) return;
+  
+  const msg = {
+    id: Date.now(),
+    matchId,
+    matchName,
+    points,
+    timestamp: new Date().toISOString(),
+    read: false
+  };
+  notifications.unshift(msg);
+  localStorage.setItem('notifications', JSON.stringify(notifications));
+  updateInboxBadge();
+}
+
+function updateInboxBadge() {
+  const d = db();
+  const u = getCurrentUser(d);
+  const inbox = (u && u.inbox) || [];
+  const unread = inbox.filter(n => !n.read).length;
+  const badge = document.getElementById('inboxBadge');
+  if (!badge) return;
+  badge.textContent = unread;
+  badge.classList.toggle('hidden', unread === 0);
+}
+
+function openInbox() {
+  const d = db();
+  const u = getCurrentUser(d);
+  const inbox = (u && u.inbox) || [];
+  const box = document.getElementById('inboxMessages');
+
+  if (inbox.length === 0) {
+    box.innerHTML = '<p style="text-align:center;color:#888;">صندوق پیام خالیه</p>';
+  } else {
+    // عکس یک‌بار بالای باکس
+    const header = `
+      <div style="text-align:center; padding:15px; border-bottom:2px solid #555;">
+        <img src="aliintertransp.png" style="width:90px; height:120px;" alt="">
+      </div>
+    `;
+    
+    const messages = inbox.map(n => {
+      const emoji = n.points === 10 ? '🎉' : n.points === 1 ? '💩' : '💪';
+      const extraText = n.points === 1 ? ' ریدی!' : '';
+      return `
+      <div class="inbox-msg ${n.read ? '' : 'unread'}" style="display:flex; align-items:flex-start; gap:15px; padding:15px; border-bottom:1px solid #444;">
+        <div style="flex:1;">
+          <p style="margin:0; line-height:1.6; color:#fff;">${emoji} ${n.text || n.matchName}${extraText}</p>
+          <small style="color:#aaa;">${new Date(n.timestamp).toLocaleString('fa-IR')}</small>
+        </div>
+      </div>
+    `}).join('');
+    
+    box.innerHTML = header + messages;
+  }
+
+  // فقط پیام‌های همین کاربر را خوانده‌شده علامت بزن
+  if (u) {
+    inbox.forEach(n => n.read = true);
+    save(d);
+  }
+  updateInboxBadge();
+  document.getElementById('inboxModal').classList.remove('hidden');
+}
+
+
+
+
+function closeInbox(e) {
+  if (!e || e.target.id === 'inboxModal') {
+    document.getElementById('inboxModal').classList.add('hidden');
+  }
+}
+
+function checkNewResults() {
+  const d = db();
+  const u = getCurrentUser(d);          // ← هماهنگ با بقیه کد
+  if (!u || !u.predictions) return;
+
+  if (!u.inbox) u.inbox = [];
+
+  const newResults = [];
+
+  d.matches.forEach(m => {
+    if (!m.result) return;
+
+    const pred = u.predictions[m.id];
+    if (!pred) return;
+
+    const alreadyNotified = u.inbox.find(n => n.matchId === m.id);
+    if (alreadyNotified) return;
+
+    const points = calcPoints(pred, m.result);
+    const matchName = `${m.home} - ${m.away}`;
+
+    newResults.push({ matchId: m.id, matchName, points });
+
+    u.inbox.unshift({
+      id: Date.now() + Math.random(),
+      matchId: m.id,
+      text: `از بازی ${matchName} ${points} امتیاز گرفتی!`,
+      points,
+      timestamp: new Date().toISOString(),
+      read: false
+    });
+  });
+
+  if (newResults.length > 0) {
+    save(d);
+    updateInboxBadge();
+    showResultsPopup(newResults);
+  }
+}
+
+
+function showResultsPopup(results) {
+  const modal = document.getElementById('prizeModal');
+  const box = modal.querySelector('.modal-box');
+  
+  let html = `
+    <img src="alianimtransp.png" style="width:90px; height:140px; margin:0 auto 15px;" alt="">
+    <h2 style="color:#ffd700; margin-bottom:20px;">نتایج پیش‌بینی‌های شما! 🎯</h2>
+  `;
+  
+  results.forEach(r => {
+    const emoji = r.points === 10 ? '🎉' : r.points === 1 ? '😅' : '💪';
+    const text = r.points === 10
+      ? `تبریک! بازی <strong>${r.matchName}</strong> رو دقیق پیش‌بینی کردی! <span style="color:#4caf50; font-weight:bold;">${r.points} امتیاز</span>`
+      : r.points === 1
+      ? `<strong>${r.matchName}</strong>: رییییدی! 😂 فقط <span style="color:#ff9800;">${r.points} امتیاز</span>`
+      : `<strong>${r.matchName}</strong>: ترکوندی ایول! <span style="color:#2196f3; font-weight:bold;">${r.points} امتیاز</span>`;
+    
+    html += `<p style="margin:10px 0; line-height:1.8; color:#fff;">${emoji} ${text}</p>`;
+  });
+  
+  html += '<button onclick="closeResultsPopup()" style="margin-top:20px; padding:10px 30px; background:#ffd700; color:#1a1a2e; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">متوجه شدم 👍</button>';
+  
+  box.innerHTML = html;
+  modal.classList.remove('hidden');
+}
+
+function closeResultsPopup() {
+  document.getElementById('prizeModal').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════
 
 
 // راه‌اندازی اولیه
+updateInboxBadge();
+checkNewResults();
 refreshUI();
 updateTimers();
+
 </script>
 </body>
 </html>
