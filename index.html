@@ -948,17 +948,14 @@ function getCurrentUser(d) {
 
 function save(d){
   DATA = d;
-  try {
-    localStorage.setItem("wc_data", JSON.stringify(d));
-  } catch(e) {
-    console.warn("localStorage save failed:", e);
-  }
-  try {
-    if(fbRef) fbRef.set(encodeForFirebase(d));
-  } catch(e) {
-    console.warn("Firebase sync failed:", e);
+  localStorage.setItem("wc_data", JSON.stringify(d));
+  // فقط وقتی کاربر واقعی داریم روی Firebase بنویس
+  const userCount = Object.keys(d.users || {}).filter(k => k !== ADMIN_KEY).length;
+  if(fbRef && userCount > 0){
+    fbRef.set(encodeForFirebase(d));
   }
 }
+
 
 // گوش دادن به تغییرات آنلاین
 if(fbRef) {
@@ -966,25 +963,33 @@ if(fbRef) {
     fbRef.on("value", snap=>{
       const raw = snap.val();
       if(raw){
-        const val = decodeFromFirebase(raw);
-        DATA = val;
-        if(!DATA.users)         DATA.users = {};
-        if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
-        if(!DATA.announcements) DATA.announcements = [];
+  const val = decodeFromFirebase(raw);
+  // گارد: اگه دیتای ریموت کاربر نداره ولی محلی داره، بازنویسی نکن
+  const remoteUsers = Object.keys(val.users || {}).length;
+  const localUsers  = Object.keys(DATA.users || {}).length;
+  if(remoteUsers === 0 && localUsers > 0){
+    // ریموت خالیه، دیتای محلی درست رو نگه دار و دوباره روی Firebase بنویس
+    save(DATA);
+  } else {
+    DATA = val;
+    if(!DATA.users)         DATA.users = {};
+    if(!DATA.matches)       DATA.matches = DEFAULT_MATCHES;
+    if(!DATA.announcements) DATA.announcements = [];
 
-        // باگ رفع: ادمین با ADMIN_KEY (encoded) بررسی می‌شه
-        if(!DATA.users[ADMIN_KEY]){
-          DATA.users[ADMIN_KEY] = {
-            name: "Admin",
-            email: ADMIN_EMAIL,
-            pass: "adminpass",
-            predictions: {},
-            seenAnnouncements: []
-          };
-        }
+    if(!DATA.users[ADMIN_KEY]){
+      DATA.users[ADMIN_KEY] = {
+        name: "Admin",
+        email: ADMIN_EMAIL,
+        pass: "adminpass",
+        predictions: {},
+        seenAnnouncements: []
+      };
+    }
 
-        try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
-      }
+    try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
+  }
+}
+
 
       refreshUI();
       if(!document.getElementById("view-matches").classList.contains("hidden"))     renderMatches();
