@@ -949,13 +949,8 @@ function getCurrentUser(d) {
 function save(d){
   DATA = d;
   localStorage.setItem("wc_data", JSON.stringify(d));
-  
-  // فقط وقتی کاربر واقعی داریم روی Firebase بنویس
-  const userCount = Object.keys(d.users || {}).filter(k => k !== ADMIN_KEY).length;
-  if(fbRef && userCount > 0){
-    fbRef.set(encodeForFirebase(d));
-  }
 }
+
 
 
 
@@ -977,7 +972,7 @@ if(fbRef) {
     try { localStorage.setItem("wc_data", JSON.stringify(DATA)); } catch(e){}
   } else {
     // ریموت کاملاً خالیه (اولین بار) → یک‌بار محلی را بالا ببر
-    if(fbRef && Object.keys(DATA.users||{}).length) fbRef.set(encodeForFirebase(DATA));
+    
   }
   refreshUI();
   // ... بقیه renderها مثل قبل
@@ -1147,7 +1142,7 @@ localStorage.setItem("wc_current", emailKey);
 save(d); // محلی
 
 if(fbRef){
-  fbRef.child("users/"+encodeEmailKey(emailKey)).set(d.users[emailKey]);
+  fbRef.child("users/"+emailKey).set(d.users[emailKey]);
 }
 
     setAuthMsg("ثبت‌نام موفق ✅", true);
@@ -1496,7 +1491,8 @@ function saveSchedule(id){
   const m=d.matches.find(x=>x.id===id);
   m.date=date;
   m.time=time;
-  save(d);
+  save(d); // محلی
+if(fbRef) fbRef.child("matches").set(d.matches);
   alert("تاریخ و ساعت بازی ذخیره شد ✅");
   renderMatches();
   renderAdmin();
@@ -1620,9 +1616,10 @@ function submitPred(id){
 
   // فقط همین پیش‌بینی روی Firebase، نه کل DB
   if(fbRef){
-    fbRef.child("users/"+encodeEmailKey(current)+"/predictions/"+id)
-         .set({ h:+h, a:+a });
+    fbRef.child("users/"+current+"/predictions/"+id)
+     .set({ h:+h, a:+a });
   }
+
 
   renderMatches();
   refreshUI();
@@ -1640,6 +1637,10 @@ function setResult(id){
   m.result = { h:+h, a:+a };
   checkSoloPrize(d, m);
   save(d);
+if(fbRef){
+  fbRef.child("matches").set(d.matches);
+  fbRef.child("users").set(encodeForFirebase({ users: d.users }).users);
+}
   checkNewResults();        // ← این خط اضافه شد
   alert("نتیجه ثبت شد ✅");
   renderAdmin();
@@ -1698,6 +1699,7 @@ function checkNotifications(){
     `);
     delete u.pendingPrize;
     save(d);
+if(fbRef) fbRef.child("users").set(encodeForFirebase({ users: d.users }).users);
     return;
   }
 
@@ -1706,6 +1708,7 @@ function checkNotifications(){
   if(unseen.length){
     u.seenAnnouncements = [...seen, ...unseen.map(a=>a.id)];
     save(d);
+if(fbRef) fbRef.child("users/"+current+"/seenAnnouncements").set(u.seenAnnouncements);
     showPrize("📢 اعلان", `
       <div style="line-height:1.8">
         ${unseen.map(a => `<div>🎯 ${a.winnerName} در بازی <b>${a.match}</b> برنده شد</div>`).join("")}
@@ -1746,7 +1749,8 @@ function addMatch(){
   const d=db();
   const maxId = d.matches.reduce((mx,m)=>Math.max(mx,m.id),0);
   d.matches.push({ id:maxId+1, date, time, home, hc, away, ac });
-  save(d);
+ save(d);
+if(fbRef) fbRef.child("matches").set(d.matches);
   alert("بازی اضافه شد ✅");
   renderAdmin();
   renderMatches();
@@ -1758,6 +1762,7 @@ function deleteMatch(id){
   d.matches = d.matches.filter(m=>m.id!==id);
   Object.values(d.users).forEach(u=>{ delete (u.predictions||{})[id]; });
   save(d);
+if(fbRef) fbRef.child("matches").set(d.matches);
   renderAdmin();
   renderMatches();
   renderLeaderboard();
@@ -1774,6 +1779,7 @@ function saveBonus(key){
   if(!u){ alert("کاربر پیدا نشد: "+key); return; }
   u.bonus = val;
   save(d);
+if(fbRef) fbRef.child("users/"+key+"/bonus").set(u.bonus);
   alert("امتیاز ذخیره شد ✅");
 
 
