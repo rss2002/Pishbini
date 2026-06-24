@@ -949,12 +949,14 @@ function getCurrentUser(d) {
 function save(d){
   DATA = d;
   localStorage.setItem("wc_data", JSON.stringify(d));
-}
+  
   // فقط وقتی کاربر واقعی داریم روی Firebase بنویس
   const userCount = Object.keys(d.users || {}).filter(k => k !== ADMIN_KEY).length;
   if(fbRef && userCount > 0){
     fbRef.set(encodeForFirebase(d));
   }
+}
+
 
 
 
