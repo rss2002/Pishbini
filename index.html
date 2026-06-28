@@ -274,6 +274,127 @@
   /* هیچ background یا color اینجا نذار تا خود دکمه دست‌نخورده بمونه */
 }
 
+/* ====================== فوتبال فانتزی ====================== */
+.fantasy-filter-btn {
+  background: rgba(255,255,255,0.1);
+  border:1px solid #4a7c2e;
+  color:#bfe9cf;
+  padding:6px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:0.3s;
+}
+.fantasy-filter-btn.active, .fantasy-filter-btn:hover {
+  background:#4a7c2e;
+  color:#fff;
+}
+
+.player-card {
+  background: linear-gradient(135deg, #1e3a1e 0%, #2d5016 100%);
+  border:2px solid #4a7c2e;
+  border-radius:8px;
+  padding:8px;
+  width:110px;
+  text-align:center;
+  cursor:pointer;
+  transition:0.3s;
+  position:relative;
+}
+.player-card:hover {
+  transform:translateY(-4px);
+  border-color:#ffd700;
+  box-shadow:0 4px 12px rgba(255,215,0,0.4);
+}
+.player-card img {
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid #4a7c2e;
+  background:#fff;
+  margin-bottom:6px;
+}
+.player-card .name {
+  font-size:13px;
+  font-weight:bold;
+  color:#bfe9cf;
+  margin:4px 0 2px;
+}
+.player-card .team {
+  font-size:11px;
+  color:#94b89e;
+}
+.player-card .pos-badge {
+  position:absolute;
+  top:4px;
+  right:4px;
+  background:#ffd700;
+  color:#1a3d0a;
+  font-size:9px;
+  padding:2px 5px;
+  border-radius:4px;
+  font-weight:bold;
+}
+
+.pitch-player {
+  background: linear-gradient(135deg, #1e3a1e 0%, #2d5016 100%);
+  border:2px solid #ffd700;
+  border-radius:8px;
+  padding:6px;
+  width:90px;
+  text-align:center;
+  position:relative;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.pitch-player img {
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  border:2px solid #ffd700;
+  background:#fff;
+  object-fit:cover;
+  margin-bottom:4px;
+}
+.pitch-player .name {
+  font-size:15px;
+  font-weight:bold;
+  color:#fff;
+  margin:2px 0;
+}
+.pitch-player .remove-btn {
+  position:absolute;
+  top:-6px;
+  left:-6px;
+  width:20px;
+  height:20px;
+  background:#e74c3c;
+  color:#fff;
+  border:none;
+  border-radius:50%;
+  cursor:pointer;
+  font-size:12px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.pitch-player .remove-btn:hover {
+  background:#c0392b;
+}
+
+.pitch-slot {
+  width:90px;
+  height:80px;
+  border:2px dashed rgba(255,255,255,0.3);
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:rgba(255,255,255,0.5);
+  font-size:32px;
+}
+
+
 @keyframes goldGlow {
   0%   { box-shadow: 0 0 8px 2px rgba(255,215,0,0.9), 0 0 0 0 rgba(255,215,0,0.7); }
   70%  { box-shadow: 0 0 8px 2px rgba(255,215,0,0.9), 0 0 0 10px rgba(255,215,0,0); }
@@ -499,6 +620,8 @@ input[type="time"] { color:#000; }
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 
 </head>
 <div id="onboardingOverlay" class="hidden">
@@ -523,6 +646,7 @@ input[type="time"] { color:#000; }
   <button id="tab-matches" class="active" onclick="showTab('matches')">بازی‌ها</button>
   <button id="tab-leaderboard" onclick="showTab('leaderboard')">لیدربرد</button>
   <button id="tab-profile" onclick="showTab('profile')">پروفایل</button>
+  <button id="tab-fantasy" onclick="showTab('fantasy')">فوتبال فانتزی ⚽</button>
   <button id="tab-admin" class="hidden" onclick="showTab('admin')">پنل ادمین</button>
   <button id="tab-livetable" onclick="showTab('livetable')">جدول مسابقات</button>
   
@@ -584,6 +708,8 @@ input[type="time"] { color:#000; }
     </div>
   </div>
 
+
+
   <!-- PROFILE -->
   <div id="view-profile" class="hidden">
     <div id="profileNeedLogin" class="card">برای دیدن پروفایل وارد شو.</div>
@@ -599,6 +725,7 @@ input[type="time"] { color:#000; }
           <div class="stat"><b id="pWinner">0</b><span>فقط برنده (۵)</span></div>
           <div class="stat"><b id="pWrong">0</b><span>اشتباه (۱)</span></div>
           <div class="stat"><b id="pSolo">0</b><span>🏆 برد تک‌نفره</span></div>
+          
         </div>
       </div>
       <div class="card">
@@ -686,9 +813,136 @@ input[type="time"] { color:#000; }
 </div>
 
 
+<!-- ====================== فوتبال فانتزی ====================== -->
+<div id="view-fantasy" class="view hidden">
+  <div id="fantasyNeedLogin" class="card" style="text-align:center;padding:40px">
+    <p style="font-size:18px">برای ساخت تیم فانتزی ابتدا وارد شوید 🔐</p>
+  </div>
+  <div id="fantasyContent" class="hidden">
+    <div class="card" style="text-align:center">
+  <h2 style="margin-bottom:20px;color:#fff">⚽ ساخت تیم فانتزی</h2>
+  <p style="color:#bfe9cf;margin-bottom:15px">فرمیشن 4-4-2 → دروازه‌بان:۱ | دفاع:۴ | میانی:۴ | مهاجم:۲</p>
+  <button onclick="toggleFantasyPicker()" style="margin-bottom:15px">🔍 انتخاب بازیکن</button>
+  <button onclick="saveFantasyTeam()" style="margin-left:8px">💾 ذخیره تیم</button>
+  <button onclick="exportFantasyImage()" style="margin-left:8px">📷 دریافت عکس تیم</button>
+</div>
+
+
+    <!-- پیکر بازیکن (مخفی) -->
+    <div id="fantasyPicker" class="card hidden" style="margin-top:15px">
+      <h3>انتخاب بازیکن</h3>
+      <div style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap">
+        <button onclick="filterFantasyPos('all')" class="fantasy-filter-btn active" data-pos="all">همه</button>
+        <button onclick="filterFantasyPos('gk')"  class="fantasy-filter-btn" data-pos="gk">دروازه‌بان</button>
+        <button onclick="filterFantasyPos('def')" class="fantasy-filter-btn" data-pos="def">دفاع</button>
+        <button onclick="filterFantasyPos('mid')" class="fantasy-filter-btn" data-pos="mid">میانی</button>
+        <button onclick="filterFantasyPos('fwd')" class="fantasy-filter-btn" data-pos="fwd">مهاجم</button>
+      </div>
+      <div id="fantasyPlayerList" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div>
+    </div>
+
+    <!-- زمین نمایش تیم -->
+    <div class="card" style="margin-top:15px;text-align:center">
+      <h3 style="margin-bottom:15px;color:#fff">تیم شما:</h3>
+      <div id="fantasyPitch" style="
+  background: linear-gradient(180deg, #2d5016 0%, #1a3d0a 100%);
+  border:2px solid #fff;
+  border-radius:8px;
+  padding:20px;
+  position:relative;
+  width:100%;
+  max-width:520px;
+  margin:0 auto;
+  aspect-ratio:2/3;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-around;
+  gap:15px;
+">
+
+        <!-- خطوط زمین -->
+        <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(255,255,255,0.3)"></div>
+        <div style="position:absolute;top:50%;left:50%;width:80px;height:80px;border:1px solid rgba(255,255,255,0.3);border-radius:50%;transform:translate(-50%,-50%)"></div>
+
+        <div class="pitch-row" data-pos="fwd" style="display:flex;justify-content:center;gap:10px;z-index:1"></div>
+        <div class="pitch-row" data-pos="mid" style="display:flex;justify-content:center;gap:10px;z-index:1"></div>
+        <div class="pitch-row" data-pos="def" style="display:flex;justify-content:center;gap:10px;z-index:1"></div>
+        <div class="pitch-row" data-pos="gk"  style="display:flex;justify-content:center;gap:10px;z-index:1"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <script>
+
+  /* ====================== فوتبال فانتزی ====================== */
+// فرمیشن 4-4-2  →  دروازه‌بان1 / دفاع4 / میانی4 / مهاجم2
+const FANTASY_FORMATION = { gk:1, def:4, mid:4, fwd:2 };
+
+const DEFAULT_PLAYERS = [
+  // فرانسه
+  { id:"fr_maignan",  name:"مایان",        team:"فرانسه",  pos:"gk"  },
+  { id:"fr_hernandez",name:"تئو هرناندز",   team:"فرانسه",  pos:"def" },
+  { id:"fr_kounde",   name:"کونده",         team:"فرانسه",  pos:"def" },
+  { id:"fr_tchouameni",name:"شوامنی",       team:"فرانسه",  pos:"mid" },
+  { id:"fr_griezmann",name:"گریزمان",       team:"فرانسه",  pos:"mid" },
+  { id:"fr_mbappe",   name:"امباپه",        team:"فرانسه",  pos:"fwd" },
+  // اسپانیا
+  { id:"es_simon",    name:"اونای سیمون",   team:"اسپانیا", pos:"gk"  },
+  { id:"es_carvajal", name:"کارواخال",      team:"اسپانیا", pos:"def" },
+  { id:"es_lenormand",name:"له‌نرماند",     team:"اسپانیا", pos:"def" },
+  { id:"es_pedri",    name:"پدری",          team:"اسپانیا", pos:"mid" },
+  { id:"es_gavi",     name:"گاوی",          team:"اسپانیا", pos:"mid" },
+  { id:"es_morata",   name:"موراتا",        team:"اسپانیا", pos:"fwd" },
+  // آرژانتین
+  { id:"ar_martinez", name:"دیبو مارتینز",  team:"آرژانتین",pos:"gk"  },
+  { id:"ar_romero",   name:"رومرو",         team:"آرژانتین",pos:"def" },
+  { id:"ar_molina",   name:"مولینا",        team:"آرژانتین",pos:"def" },
+  { id:"ar_depaul",   name:"ده‌پائول",         team:"آرژانتین",pos:"mid" },
+  { id:"ar_macallister",name:"مک‌آلیستر",   team:"آرژانتین",pos:"mid" },
+  { id:"ar_messi",    name:"مسی",           team:"آرژانتین",pos:"fwd" },
+  // پرتغال
+  { id:"pt_costa",    name:"دیوگو کاستا",   team:"پرتغال",  pos:"gk"  },
+  { id:"pt_cancelo",  name:"کانسلو",        team:"پرتغال",  pos:"def" },
+  { id:"pt_dias",     name:"رومن دیاس",     team:"پرتغال",  pos:"def" },
+  { id:"pt_bruno",    name:"برونو فرناندز", team:"پرتغال",  pos:"mid" },
+  { id:"pt_bernardo", name:"برناردو سیلوا", team:"پرتغال",  pos:"mid" },
+  { id:"pt_ronaldo",  name:"رونالدو",       team:"پرتغال",  pos:"fwd" },
+  // برزیل
+  { id:"br_alisson",  name:"آلیسون",        team:"برزیل",   pos:"gk"  },
+  { id:"br_marquinhos",name:"مارکینیوس",    team:"برزیل",   pos:"def" },
+  { id:"br_danilo",   name:"دانیلو",        team:"برزیل",   pos:"def" },
+  { id:"br_casemiro", name:"کاسمیرو",       team:"برزیل",   pos:"mid" },
+  { id:"br_raphinha", name:"رافینیا",       team:"برزیل",   pos:"mid" },
+  { id:"br_vinicius", name:"وینیسیوس",      team:"برزیل",   pos:"fwd" },
+  // ایران
+  { id:"ir_beiranvand",name:"بیرانوند",     team:"ایران",   pos:"gk"  },
+  { id:"ir_hosseini", name:"حسینی",         team:"ایران",   pos:"def" },
+  { id:"ir_mohammadi",name:"محمدی",         team:"ایران",   pos:"def" },
+  { id:"ir_ezatolahi",name:"عزت‌اللهی",     team:"ایران",   pos:"mid" },
+  { id:"ir_jahanbakhsh",name:"جهانبخش",     team:"ایران",   pos:"mid" },
+  { id:"ir_taremi",   name:"طارمی",         team:"ایران",   pos:"fwd" },
+];
+// آدرس عکس هر بازیکن (بعداً فایل png/jpg رو با همین نام بذار)
+DEFAULT_PLAYERS.forEach(p => p.img = "images/players/" + p.id + ".png");
+
+const POS_LABEL = { gk:"دروازه‌بان", def:"دفاع", mid:"میانی", fwd:"مهاجم" };
+
+function getPlayer(id){ return DEFAULT_PLAYERS.find(p=>p.id===id) || null; }
+
+// تیم فانتزی کاربر فعلی رو با ساختار استاندارد برمی‌گردونه
+function getFantasyTeam(u){
+  const t = u.fantasyTeam || {};
+  return {
+    gk:  Array.isArray(t.gk)  ? t.gk  : [],
+    def: Array.isArray(t.def) ? t.def : [],
+    mid: Array.isArray(t.mid) ? t.mid : [],
+    fwd: Array.isArray(t.fwd) ? t.fwd : [],
+    updatedAt: t.updatedAt || null
+  };
+}
+
 /* ====================== داده‌ی پایه ====================== */
 const FLAGS = {
   mx: `<svg viewBox="0 0 24 16"><rect width="8" height="16" fill="#006847"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#CE1126"/><circle cx="12" cy="8" r="2" fill="#006847" opacity="0.3"/></svg>`,
@@ -1123,6 +1377,9 @@ function msg(id, text, ok) {
   }
 }
 
+
+
+
 function setAuthMsg(text, ok){ msg("authMsg", text, ok); }
 
 async function doAuth(){
@@ -1179,6 +1436,21 @@ if(fbRef){
   }
 }
 
+function showTab(name){
+  ["matches","leaderboard","profile","admin","livetable","fantasy"].forEach(t=>{
+    document.getElementById("view-"+t).classList.toggle("hidden", t!==name);
+    document.getElementById("tab-"+t).classList.toggle("active", t===name);
+  });
+  if(name==="matches")     renderMatches();
+  if(name==="leaderboard") renderLeaderboard();
+  if(name==="profile")     renderProfile();
+  if(name==="admin")       renderAdmin();
+  if(name==="livetable")   fetchLiveTable();
+  if(name==="fantasy")     renderFantasy();
+}
+
+
+
 function logout(){
   current = null;
   isAuthenticating = false;
@@ -1226,17 +1498,7 @@ function refreshUI(){
   }
 }
 
-function showTab(name){
-  ["matches","leaderboard","profile","admin","livetable"].forEach(t=>{
-    document.getElementById("view-"+t).classList.toggle("hidden", t!==name);
-    document.getElementById("tab-"+t).classList.toggle("active", t===name);
-  });
-  if(name==="matches")     renderMatches();
-  if(name==="leaderboard") renderLeaderboard();
-  if(name==="profile")     renderProfile();
-  if(name==="admin")       renderAdmin();
-  if(name==="livetable")   fetchLiveTable();
-}
+
 
 
 /* ====================== بازی‌ها ====================== */
@@ -1298,6 +1560,203 @@ function renderMatches(){
 }
 
   
+/* ====================== رندر فوتبال فانتزی ====================== */
+function renderFantasy(){
+  const logged = !!current;
+  const needLogin = document.getElementById("fantasyNeedLogin");
+  const content = document.getElementById("fantasyContent");
+  
+  if(needLogin) needLogin.classList.toggle("hidden", logged);
+  if(content) content.classList.toggle("hidden", !logged);
+  
+  if(!logged) return;
+
+  const d = db();
+  const u = getCurrentUser(d);
+  if(!u) return;
+
+  const team = getFantasyTeam(u);
+  renderFantasyPitch(team);
+  renderFantasyPlayerList('all');
+}
+
+
+function getFantasyTeam(u){
+  return u.fantasyTeam || { gk:[], def:[], mid:[], fwd:[] };
+}
+
+function renderFantasyPitch(team){
+  ['gk','def','mid','fwd'].forEach(pos=>{
+    const row = document.querySelector(`.pitch-row[data-pos="${pos}"]`);
+    row.innerHTML = '';
+    const slots = FANTASY_FORMATION[pos];
+    const selected = team[pos] || [];
+    for(let i=0; i<slots; i++){
+      if(selected[i]){
+        const pl = getPlayer(selected[i]);
+        if(pl){
+          row.innerHTML += `
+            <div class="pitch-player">
+              <button class="remove-btn" onclick="removeFromFantasy('${pos}',${i})" title="حذف">×</button>
+              <img src="${pl.img}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2255%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23999%22%3E%3F%3C/text%3E%3C/svg%3E'">
+              <div class="name">${pl.name}</div>
+            </div>
+          `;
+        }
+      } else {
+        row.innerHTML += `<div class="pitch-slot">+</div>`;
+      }
+    }
+  });
+}
+
+let currentFantasyFilter = 'all';
+function renderFantasyPlayerList(filter){
+  currentFantasyFilter = filter;
+  const list = document.getElementById("fantasyPlayerList");
+  list.innerHTML = '';
+  const filtered = filter==='all' ? DEFAULT_PLAYERS : DEFAULT_PLAYERS.filter(p=>p.pos===filter);
+  filtered.forEach(pl=>{
+    list.innerHTML += `
+      <div class="player-card" onclick="addToFantasy('${pl.id}')">
+        <span class="pos-badge">${POS_LABEL[pl.pos]}</span>
+        <img src="${pl.img}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2255%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23999%22%3E%3F%3C/text%3E%3C/svg%3E'">
+        <div class="name">${pl.name}</div>
+        <div class="team">${pl.team}</div>
+      </div>
+    `;
+  });
+}
+function showMsg(message, success) {
+  const style = success 
+    ? 'background:#2ecc71;color:#fff' 
+    : 'background:#e74c3c;color:#fff';
+  
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.cssText = `position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;${style};z-index:9999;font-family:Vazir,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.3)`;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.remove(), 3000);
+}
+
+
+function toggleFantasyPicker(){
+  const picker = document.getElementById("fantasyPicker");
+  picker.classList.toggle("hidden");
+}
+
+function filterFantasyPos(pos){
+  document.querySelectorAll('.fantasy-filter-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.pos===pos);
+  });
+  renderFantasyPlayerList(pos);
+}
+
+function addToFantasy(playerId){
+  const d = db();
+  const u = getCurrentUser(d);
+  if(!u){ showMsg("ابتدا وارد شوید",false); return; }
+
+  const pl = getPlayer(playerId);
+  if(!pl){ showMsg("بازیکن پیدا نشد",false); return; }
+
+  const team = getFantasyTeam(u);
+  const pos = pl.pos;
+  const max = FANTASY_FORMATION[pos];
+
+  if(team[pos].includes(playerId)){
+    showMsg("این بازیکن قبلاً انتخاب شده",false);
+    return;
+  }
+  if(team[pos].length >= max){
+    showMsg(`حداکثر ${max} بازیکن ${POS_LABEL[pos]} مجاز است`,false);
+    return;
+  }
+
+  team[pos].push(playerId);
+  u.fantasyTeam = team;
+
+  renderFantasyPitch(team);
+  showMsg(`${pl.name} اضافه شد ✅`,true);
+}
+
+function removeFromFantasy(pos, idx){
+  const d = db();
+  const u = getCurrentUser(d);
+  if(!u) return;
+  const team = getFantasyTeam(u);
+  team[pos].splice(idx, 1);
+  u.fantasyTeam = team;
+  renderFantasyPitch(team);
+  showMsg("بازیکن حذف شد",true);
+}
+
+function saveFantasyTeam(){
+  const d = db();
+  const u = getCurrentUser(d);
+  if(!u){ showMsg("ابتدا وارد شوید",false); return; }
+
+  const team = getFantasyTeam(u);
+  const total = team.gk.length + team.def.length + team.mid.length + team.fwd.length;
+  if(total !== 11){
+    showMsg(`باید دقیقاً ۱۱ بازیکن انتخاب کنید (فعلاً: ${total})`,false);
+    return;
+  }
+
+  team.updatedAt = Date.now();
+  u.fantasyTeam = team;
+  save(d);
+
+  // لایو روی Firebase
+  if(fbRef){
+    fbRef.child("users/"+current+"/fantasyTeam").set(team)
+      .then(()=> showMsg("تیم فانتزی شما ذخیره شد ✅ 🔥",true))
+      .catch(e=>{
+        console.warn("Firebase sync failed:", e);
+        showMsg("تیم محلی ذخیره شد، اما سینک Firebase ناموفق بود ⚠️",false);
+      });
+  } else {
+    showMsg("تیم فانتزی ذخیره شد ✅ (فقط محلی)",true);
+  }
+}
+
+function exportFantasyImage(){
+  const pitch = document.getElementById("fantasyPitch");
+  if(!pitch){ showMsg("زمین فانتزی پیدا نشد",false); return; }
+
+  if(typeof html2canvas === 'undefined'){
+    showMsg("کتابخانه‌ی html2canvas لود نشده",false);
+    return;
+  }
+
+  showMsg("در حال ساخت تصویر... ⏳",true);
+  html2canvas(pitch, { scale:2, backgroundColor:'#1a3d0a' }).then(canvas=>{
+    canvas.toBlob(blob=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'my-fantasy-team.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      showMsg("تصویر دانلود شد 📷✅",true);
+    });
+  }).catch(e=>{
+    console.error(e);
+    showMsg("خطا در ساخت تصویر",false);
+  });
+}
+  // نمایش تیم فانتزی در پروفایل
+  const fantasyBox = document.getElementById("pFantasy");
+  if(fantasyBox){
+    const team = getFantasyTeam(u);
+    const total = team.gk.length + team.def.length + team.mid.length + team.fwd.length;
+    if(total>0){
+      fantasyBox.innerHTML = `<p style="color:#bfe9cf">تیم فانتزی: ${total}/۱۱ بازیکن انتخاب شده</p>`;
+    } else {
+      fantasyBox.innerHTML = `<p style="color:#94b89e">هنوز تیم فانتزی نساخته</p>`;
+    }
+  }
 
 
 /* ====================== جدول لایو ====================== */
